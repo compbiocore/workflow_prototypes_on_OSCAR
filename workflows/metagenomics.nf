@@ -1,7 +1,7 @@
 #! /usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-params.emu_db = '/gpfs/data/cbc/pcao5/silva_db'
+params.emudb = '/gpfs/data/cbc/pcao5/silva_db'
 
 if (!params.samplesheet || !params.outdir || !params.fastqscreen_conf) {
   error "Error: Missing the samplesheet (--samplesheet), fastqscreen conf file (--fastqscreen_conf) or output directory (--outdir)."
@@ -74,6 +74,8 @@ process fastq_screen {
 
   publishDir "$params.outdir/$sample_id/"
 
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
+
   input:
     tuple val(sample_id), file(summary), file(reads), file(fast5), path(fastq_directory)
 
@@ -98,7 +100,7 @@ process emu {
 
   publishDir "$params.outdir/$sample_id/"
 
-  containerOptions "--bind $params.emu_db:/emu_db"
+  containerOptions "--bind $params.emudb:/emu_db"
 
   input:
     tuple val(sample_id), file(summary), file(reads), file(fast5), path(fastq_directory)
