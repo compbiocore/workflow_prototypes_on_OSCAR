@@ -1,0 +1,4 @@
+sample_id,read_summary,reads,fast5,fastq_directory
+SAMN28789430,,/gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/data/SRR19309654.fastq.gz,,
+SAMN28789428,,/gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/data/SRR19309656.fastq.gz,,
+,,
