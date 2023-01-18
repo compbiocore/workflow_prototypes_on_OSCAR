@@ -90,7 +90,7 @@ process fastq_screen {
 process emu {
   debug true
   
-  cpus 6
+  cpus 16
 
   time '1.d'
 
@@ -113,7 +113,7 @@ process emu {
         """
         source /opt/conda/bin/activate py37
         export EMU_DATABASE_DIR=/emu_db
-        emu abundance --threads 6 ${reads} --output-dir emu
+        emu abundance --keep-counts --type map-ont --threads 16 ${reads} --output-dir emu
         """
 }
 
