@@ -1,0 +1,55 @@
+FROM ubuntu:jammy
+RUN apt-get update
+RUN apt-get install -y wget git trimmomatic unzip default-jre-headless libfindbin-libs-perl build-essential libncurses-dev libbz2-dev liblzma-dev zlib1g-dev
+
+#FastQC
+RUN wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.9.zip
+RUN unzip fastqc_v0.11.9.zip
+RUN chmod 755 /FastQC/fastqc
+RUN ln -s /FastQC/fastqc /usr/local/bin/fastqc
+
+#libMaus
+RUN apt-get install -y libmaus2-2
+
+#biobambam2
+RUN wget https://gitlab.com/german.tischler/biobambam2/uploads/ffbf93e1b4ca3a695bba8f10b131cf44/biobambam2_x86_64-linux-gnu_2.0.180.tar.xz
+RUN tar -xvf biobambam2_x86_64-linux-gnu_2.0.180.tar.xz
+RUN ln -s //biobambam2/x86_64-linux-gnu/2.0.180/bin/bammarkduplicates2 /usr/local/bin/bammarkduplicates2
+
+#samtools
+RUN wget https://github.com/samtools/samtools/releases/download/1.16.1/samtools-1.16.1.tar.bz2
+RUN tar -xvf samtools-1.16.1.tar.bz2
+RUN cd /samtools-1.16.1 && ./configure && make && make install
+RUN export PATH=/samtools-1.16.1:$PATH
+
+#Qualimap
+RUN cd /
+RUN wget https://bitbucket.org/kokonech/qualimap/downloads/qualimap_v2.2.1.zip
+RUN unzip qualimap_v2.2.1.zip
+
+#Install python 3.7
+RUN apt install software-properties-common -y
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt install python3.7 -y
+
+#Make python 3.7 the default
+RUN echo "alias python=python3.7" >> ~/.bashrc
+RUN export PATH=${PATH}:/usr/bin/python3.7
+RUN /bin/bash -c "source ~/.bashrc"
+
+#Install pip
+RUN apt install python3-pip -y
+
+#HTSeq
+RUN pip3 install HTSeq
+
+#featureCounts
+RUN wget https://sourceforge.net/projects/subread/files/subread-2.0.3/subread-2.0.3-Linux-x86_64.tar.gz/download
+RUN tar -xvf download
+RUN ln -s /subread-2.0.3-Linux-x86_64/bin/featureCounts /usr/local/bin/featureCounts
+
+#Get latest STAR source from releases
+RUN wget https://github.com/alexdobin/STAR/archive/2.7.10b.tar.gz
+RUN tar -xzf 2.7.10b.tar.gz
+RUN ln -s /STAR-2.7.10b/bin/Linux_x86_64/STAR /usr/local/bin/STAR
+RUN ln -s /qualimap_v2.2.1/qualimap /usr/local/bin/qualimap
