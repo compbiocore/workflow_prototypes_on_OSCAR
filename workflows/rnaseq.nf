@@ -45,6 +45,7 @@ workflow PROCESS_SAMPLE {
         input_ch
     main:
         fastqc(input_ch)
+        trimmomatic(input_ch)
     emit:
         fastqc.out
 }
