@@ -28,15 +28,19 @@ process trimmomatic {
 
   publishDir "$params.outdir"
 
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
   input:
     tuple val(sample_id), file(read1), file(read2)
 
   output:
     path "*"
+    file("fastq/${sample_id}_tr.fq.gz"), emit: fastq
 
   script:
     """
-     trimmomatic PE -threads 8 -trimlog logs/${sample_id}_trimmomatic_PE.log ${read1} ${read2} -baseout fastq/${sample_id}.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-PE-2.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50 2
+     mkdir fastq logs
+     TrimmomaticPE -threads 8 -trimlog logs/${sample_id}_trimmomatic_PE.log ${read1} ${read2} -baseout fastq/${sample_id}_tr.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-PE-2.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
     """
 }
 
