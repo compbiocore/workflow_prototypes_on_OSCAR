@@ -38,7 +38,7 @@ RUN export PATH=${PATH}:/usr/bin/python3.7
 RUN /bin/bash -c "source ~/.bashrc"
 
 #Install pip
-RUN apt install python3-pip -y
+RUN apt install python3-pip python3-numpy -y
 
 #HTSeq
 RUN pip3 install HTSeq
