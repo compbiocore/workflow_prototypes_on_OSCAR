@@ -1,6 +1,10 @@
 #! /usr/bin/env nextflow
 nextflow.enable.dsl=2
 
+params.reference_genome = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx"
+params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx"
+
+
 if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
 }
@@ -8,7 +12,7 @@ if (!params.samplesheet || !params.out_dir) {
 process fastqc {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.outdir/qc"
+  publishDir "$params.out_dir/qc"
 
   input:
     tuple val(sample_id), file(read1), file(read2)
@@ -26,10 +30,10 @@ process fastqc {
 process fastqc2 {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.outdir/qc"
+  publishDir "$params.out_dir/qc"
 
   input:
-    tuple val(sample_id), file(read1)
+    tuple val(sample_id), file(read1), file(read2)
 
   output:
     path "*"
@@ -37,17 +41,14 @@ process fastqc2 {
   script:
     """
      fastqc ${read1}
+     fastqc ${read2}
     """
 }
-
-
 
 process trimmomatic {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.outdir"
-
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+  publishDir "$params.out_dir"
 
   time '6.h'
 
@@ -58,7 +59,7 @@ process trimmomatic {
 
   output:
     path "*"
-    tuple val(sample_id), file("fastq/${sample_id}_tr.fq.gz"), file(null), emit: fastq_out
+    tuple val(sample_id), file("fastq/${sample_id}_tr_1U.fq.gz"), file("fastq/${sample_id}_tr_2U.fq.gz"), emit: fastq_out
 
   script:
     """
@@ -67,12 +68,36 @@ process trimmomatic {
     """
 }
 
+process star {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir"
+
+  time '6.h'
+
+  cpus 8
+
+  input:
+    tuple val(sample_id), file(read1), file(read2)
+
+  script:
+    """
+     STAR --genomeLoad NoSharedMemory --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${params.reference_genome} \
+          --quantMode GeneCounts --twopassMode Basic --sjdbGTFfile ${params.gtf} -outReadsUnmapped Fastx \
+          --outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c --readFilesIn ${read1} ${read2} \
+          --outFileNamePrefix ${sample_id}
+    """
+}
+
 workflow PROCESS_SAMPLE {
     take:
         input_ch
     main:
         fastqc(input_ch)
-        fastqc2(trimmomatic(input_ch).fastq_out.collect())
+        trimmed_fastqs = trimmomatic(input_ch).fastq_out.collect()
+        trimmed_fastqs.into { datasets_fastqc2; datasets_STAR }
+        fastqc2(datasets_fastqc2)
+        star(datasets_STAR)
     emit:
         fastqc.out
 }
