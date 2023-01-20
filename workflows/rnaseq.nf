@@ -17,15 +17,30 @@ process fastqc {
     path "*"
 
   script:
-   """
-   fastqc ${read1}
-   """
-
-   if (read2.exists)
-     """
+    """
+     fastqc ${read1}
      fastqc ${read2}
-     """
+    """
 }
+
+process fastqc2 {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.outdir/qc"
+
+  input:
+    tuple val(sample_id), file(read1)
+
+  output:
+    path "*"
+
+  script:
+    """
+     fastqc ${read1}
+    """
+}
+
+
 
 process trimmomatic {
   container 'cowmoo/rnaseq_pipeline:latest'
@@ -34,13 +49,16 @@ process trimmomatic {
 
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
+  time '6.h'
+
+  cpus 8
+
   input:
     tuple val(sample_id), file(read1), file(read2)
 
   output:
     path "*"
-    file("fastq/${sample_id}_tr.fq.gz"), emit: fastq
-    tuple val(sample_id), file(''), file("fastq/${sample_id}_tr.fq.gz"), file(null), emit: out
+    tuple val(sample_id), file("fastq/${sample_id}_tr.fq.gz"), file(null), emit: fastq_out
 
   script:
     """
@@ -54,7 +72,7 @@ workflow PROCESS_SAMPLE {
         input_ch
     main:
         fastqc(input_ch)
-        fastqc(trimmomatic(input_ch).out)
+        fastqc2(trimmomatic(input_ch).fastq_out.collect())
     emit:
         fastqc.out
 }
