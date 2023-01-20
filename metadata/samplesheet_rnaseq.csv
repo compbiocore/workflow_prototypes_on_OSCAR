@@ -1,5 +1,2 @@
 sample_id,read1,read2
-aged_1,/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/00_fastq/B440-RA_R1_001.fastq.gz,/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_
-ffs/00_fastq/B440-RA_R2_001.fastq.gz
-aged_2,/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/00_fastq/F67-RA_R1_001.fastq.gz,/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_f
-fs/00_fastq/F67-RA_R2_001.fastq.gz
+aged_1,/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/00_fastq/B440-RA_R1_001.fastq.gz,/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/00_fastq/B440-RA_R2_001.fastq.gz
