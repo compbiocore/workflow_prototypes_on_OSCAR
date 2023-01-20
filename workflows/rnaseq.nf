@@ -17,10 +17,14 @@ process fastqc {
     path "*"
 
   script:
-    """
-     fastqc ${read1}
+   """
+   fastqc ${read1}
+   """
+
+   if (read2.exists)
+     """
      fastqc ${read2}
-    """
+     """
 }
 
 process trimmomatic {
@@ -36,6 +40,7 @@ process trimmomatic {
   output:
     path "*"
     file("fastq/${sample_id}_tr.fq.gz"), emit: fastq
+    tuple val(sample_id), file(''), file("fastq/${sample_id}_tr.fq.gz"), file(null), emit: out
 
   script:
     """
@@ -49,7 +54,7 @@ workflow PROCESS_SAMPLE {
         input_ch
     main:
         fastqc(input_ch)
-        trimmomatic(input_ch)
+        fastqc(trimmomatic(input_ch).out)
     emit:
         fastqc.out
 }
