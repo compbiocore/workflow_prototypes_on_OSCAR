@@ -99,9 +99,8 @@ workflow PROCESS_SAMPLE {
     main:
         fastqc(input_ch)
         trimmed_fastqs = trimmomatic(input_ch).fastq_out.collect()
-        trimmed_fastqs.into { datasets_fastqc2; datasets_STAR }
-        fastqc2(datasets_fastqc2)
-        star(datasets_STAR)
+        fastqc2(trimmed_fastqs)
+        star(trimmed_fastqs)
     emit:
         fastqc.out
 }
