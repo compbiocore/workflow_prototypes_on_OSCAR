@@ -75,7 +75,7 @@ process star {
 
   time '6.h'
 
-  cpus 8
+  cpus 16
 
   input:
     tuple val(sample_id), file(read1), file(read2)
@@ -95,9 +95,8 @@ workflow PROCESS_SAMPLE {
     main:
         fastqc(input_ch)
         trimmed_fastqs = trimmomatic(input_ch).fastq_out.collect()
-        trimmed_fastqs.into { datasets_fastqc2; datasets_STAR }
-        fastqc2(datasets_fastqc2)
-        star(datasets_STAR)
+        fastqc2(trimmed_fastqs)
+        star(trimmed_fastqs)
     emit:
         fastqc.out
 }
