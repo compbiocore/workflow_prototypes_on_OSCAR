@@ -75,7 +75,11 @@ process star {
 
   time '6.h'
 
-  cpus 8
+  cpus 16
+
+  memory '75.GB'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
   input:
     tuple val(sample_id), file(read1), file(read2)
