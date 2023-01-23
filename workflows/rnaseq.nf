@@ -29,7 +29,7 @@ process qualimap {
 process mark_duplicate {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir/", mode: 'copy', overwrite: false
+  publishDir "$params.out_dir/", mode: 'copy', overwrite: true
 
   input:
     tuple val(sample_id), file(alignment)
@@ -133,6 +133,41 @@ process star {
     """
 }
 
+process htseq_count {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir", mode: 'copy', overwrite: false
+
+  input:
+   tuple val(sample_id), file(bam), file(bam_index)
+
+  output:
+   path "*"
+
+  script:
+   """
+    htseq-count -s no -t exon -f bam -a 0 -r pos --additional-attr=gene_name --nonunique=all -i gene_id \
+    --secondary-alignments=score ${bam} ${params.gtf}
+   """
+}
+
+process feature_count {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir/expressions/", mode: 'copy', overwrite: false
+
+  input:
+   tuple val(sample_id), file(bam), file(bam_index)
+
+  output:
+   path "*"
+
+  script:
+   """
+    featureCounts -s 0 -M --fracOverlap 0.8 -O -a ${params.gtf} -o ${sample_id}.featureCounts.txt ${bam}
+   """
+}
+
 workflow PROCESS_SAMPLE {
     take:
         input_ch
@@ -145,7 +180,9 @@ workflow PROCESS_SAMPLE {
 
         marked_duplicates_bam = mark_duplicate(star_alignments).marked_duplicates.collect()
         qualimap(marked_duplicates_bam)
-        
+        htseq_count(marked_duplicates_bam)
+        feature_count(marked_duplicates_bam)
+
     emit:
         fastqc.out
 }
