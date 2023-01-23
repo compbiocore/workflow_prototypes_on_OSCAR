@@ -2,7 +2,7 @@
 nextflow.enable.dsl=2
 
 params.reference_genome = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx"
-params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx"
+params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0.108.gtf"
 
 
 if (!params.samplesheet || !params.out_dir) {
@@ -59,7 +59,7 @@ process trimmomatic {
 
   output:
     path "*"
-    tuple val(sample_id), file("fastq/${sample_id}_tr_1U.fq.gz"), file("fastq/${sample_id}_tr_2U.fq.gz"), emit: fastq_out
+    tuple val(sample_id), file("fastq/${sample_id}_tr_1P.fq.gz"), file("fastq/${sample_id}_tr_2P.fq.gz"), emit: fastq_out
 
   script:
     """
