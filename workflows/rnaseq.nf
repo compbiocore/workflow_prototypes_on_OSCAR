@@ -35,7 +35,7 @@ process mark_duplicate {
     tuple val(sample_id), file(alignment)
 
   output:
-    tuple val(sample_id), file("*.dup.srtd.bam"), file("*.dup.srtd.bam.bai"), emit: marked_duplicate
+    tuple val(sample_id), file("*.dup.srtd.bam"), file("*.dup.srtd.bam.bai"), emit: marked_duplicates
 
   script:
    """
@@ -143,8 +143,8 @@ workflow PROCESS_SAMPLE {
         fastqc2(trimmed_fastqs)
         star_alignments = star(trimmed_fastqs).alignment_out.collect()
 
-        marked_duplicates = mark_duplicate(star_alignments).marked_duplicates.collect()
-        qualimap(marked_duplicates)
+        marked_duplicates_bam = mark_duplicate(star_alignments).marked_duplicates.collect()
+        qualimap(marked_duplicates_bam)
         
     emit:
         fastqc.out
