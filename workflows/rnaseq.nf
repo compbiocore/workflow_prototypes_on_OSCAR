@@ -9,6 +9,42 @@ if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
 }
 
+process qualimap {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir/qc/${sample_id}", mode: 'copy', overwrite: false
+
+  input:
+   tuple val(sample_id), file(bam), file(bam_index)
+
+  output:
+   path "*"
+
+  script:
+   """
+    qualimap -Xmx10000M rnaseq -gtf ${params.gtf} -bam ${bam} -outdir ${sample_id}
+   """
+}
+
+process mark_duplicate {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir/", mode: 'copy', overwrite: false
+
+  input:
+    tuple val(sample_id), file(alignment)
+
+  output:
+    tuple val(sample_id), file("*.dup.srtd.bam"), file("*.dup.srtd.bam.bai"), emit: marked_duplicate
+
+  script:
+   """
+     samtools index -b ${alignment}
+     bammarkduplicates2 I=${alignment} O=${sample_id}.dup.srtd.bam M=${sample_id}.dup.metrics.txt
+     samtools index -b ${sample_id}.dup.srtd.bam
+   """
+}
+
 process fastqc {
   container 'cowmoo/rnaseq_pipeline:latest'
 
@@ -84,6 +120,10 @@ process star {
   input:
     tuple val(sample_id), file(read1), file(read2)
 
+  output:
+    path "*.bam"
+    tuple val(sample_id), file(".sortedByCoord.out.bam"), emit: alignment_out
+
   script:
     """
      STAR --genomeLoad NoSharedMemory --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${params.reference_genome} \
@@ -98,9 +138,14 @@ workflow PROCESS_SAMPLE {
         input_ch
     main:
         fastqc(input_ch)
+
         trimmed_fastqs = trimmomatic(input_ch).fastq_out.collect()
         fastqc2(trimmed_fastqs)
-        star(trimmed_fastqs)
+        star_alignments = star(trimmed_fastqs).alignment_out.collect()
+
+        marked_duplicates = mark_duplicate(star_alignments).marked_duplicates.collect()
+        qualimap(marked_duplicates)
+        
     emit:
         fastqc.out
 }
