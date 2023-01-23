@@ -12,6 +12,8 @@ if (!params.samplesheet || !params.out_dir) {
 process qualimap {
   container 'cowmoo/rnaseq_pipeline:latest'
 
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'  
+
   publishDir "$params.out_dir/qc/${sample_id}", mode: 'copy', overwrite: false
 
   input:
@@ -22,7 +24,7 @@ process qualimap {
 
   script:
    """
-    qualimap -Xmx10000M rnaseq -gtf ${params.gtf} -bam ${bam} -outdir ${sample_id}
+    qualimap rnaseq -gtf ${params.gtf} -bam ${bam} -outdir ${sample_id}
    """
 }
 
@@ -122,7 +124,7 @@ process star {
 
   output:
     path "*.bam"
-    tuple val(sample_id), file(".sortedByCoord.out.bam"), emit: alignment_out
+    tuple val(sample_id), file("*.sortedByCoord.out.bam"), emit: alignment_out
 
   script:
     """
@@ -137,6 +139,15 @@ process htseq_count {
   container 'cowmoo/rnaseq_pipeline:latest'
 
   publishDir "$params.out_dir", mode: 'copy', overwrite: false
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  cpus 16
+
+  
+  time '3.h'
+
+  memory '30.GB' 
 
   input:
    tuple val(sample_id), file(bam), file(bam_index)
@@ -156,6 +167,10 @@ process feature_count {
 
   publishDir "$params.out_dir/expressions/", mode: 'copy', overwrite: false
 
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  memory '8.GB'
+
   input:
    tuple val(sample_id), file(bam), file(bam_index)
 
@@ -164,7 +179,7 @@ process feature_count {
 
   script:
    """
-    featureCounts -s 0 -M --fracOverlap 0.8 -O -a ${params.gtf} -o ${sample_id}.featureCounts.txt ${bam}
+    featureCounts -p -s 0 -M --fracOverlap 0.8 -O -a ${params.gtf} -o ${sample_id}.featureCounts.txt ${bam}
    """
 }
 
