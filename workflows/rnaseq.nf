@@ -31,7 +31,7 @@ process qualimap {
 process mark_duplicate {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir/", mode: 'copy', overwrite: true
+  publishDir "$params.out_dir/", mode: 'copy', overwrite: false
 
   input:
     tuple val(sample_id), file(alignment)
@@ -50,7 +50,7 @@ process mark_duplicate {
 process fastqc {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir/qc"
+  publishDir "$params.out_dir/qc", mode: 'copy', overwrite: false
 
   input:
     tuple val(sample_id), file(read1), file(read2)
@@ -68,7 +68,7 @@ process fastqc {
 process fastqc2 {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir/qc"
+  publishDir "$params.out_dir/qc", mode: 'copy', overwrite: false
 
   input:
     tuple val(sample_id), file(read1), file(read2)
@@ -86,7 +86,7 @@ process fastqc2 {
 process trimmomatic {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir"
+  publishDir "$params.out_dir", mode: 'copy', overwrite: false
 
   time '6.h'
 
@@ -109,7 +109,7 @@ process trimmomatic {
 process star {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir"
+  publishDir "$params.out_dir", mode: 'copy', overwrite: false
 
   time '6.h'
 
@@ -158,7 +158,7 @@ process htseq_count {
   script:
    """
     htseq-count -s no -t exon -f bam -a 0 -r pos --additional-attr=gene_name --nonunique=all -i gene_id \
-    --secondary-alignments=score ${bam} ${params.gtf}
+    --secondary-alignments=score ${bam} ${params.gtf} > ${sample_id}_htseq_counts
    """
 }
 
