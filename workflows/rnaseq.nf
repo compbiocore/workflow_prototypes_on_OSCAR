@@ -189,11 +189,11 @@ workflow PROCESS_SAMPLE {
     main:
         fastqc(input_ch)
 
-        trimmed_fastqs = trimmomatic(input_ch).fastq_out.collect()
+        trimmed_fastqs = Channel.fromList(trimmomatic(input_ch).fastq_out.collect())
         fastqc2(trimmed_fastqs)
-        star_alignments = star(trimmed_fastqs).alignment_out.collect()
+        star_alignments = Channel.fromList(star(trimmed_fastqs).alignment_out.collect())
 
-        marked_duplicates_bam = mark_duplicate(star_alignments).marked_duplicates.collect()
+        marked_duplicates_bam = Channel.fromList(mark_duplicate(star_alignments).marked_duplicates.collect())
         qualimap(marked_duplicates_bam)
         htseq_count(marked_duplicates_bam)
         feature_count(marked_duplicates_bam)
