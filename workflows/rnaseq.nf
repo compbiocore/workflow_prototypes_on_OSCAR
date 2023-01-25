@@ -37,7 +37,7 @@ process mark_duplicate {
     tuple val(sample_id), file(alignment)
 
   output:
-    tuple val(sample_id), file("*.dup.srtd.bam"), file("*.dup.srtd.bam.bai"), emit: marked_duplicates
+    tuple val(sample_id), file("*.dup.srtd.bam"), file("*.dup.srtd.bam.bai") 
 
   script:
    """
@@ -86,7 +86,7 @@ process fastqc2 {
 process trimmomatic {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir", mode: 'copy', overwrite: false
+  publishDir "$params.out_dir", pattern: "*.txt", mode: 'copy', overwrite: false
 
   time '6.h'
 
@@ -96,8 +96,7 @@ process trimmomatic {
     tuple val(sample_id), file(read1), file(read2)
 
   output:
-    path "*"
-    tuple val(sample_id), file("fastq/${sample_id}_tr_1P.fq.gz"), file("fastq/${sample_id}_tr_2P.fq.gz"), emit: fastq_out
+    tuple val(sample_id), file("fastq/${sample_id}_tr_1P.fq.gz"), file("fastq/${sample_id}_tr_2P.fq.gz")
 
   script:
     """
@@ -124,7 +123,7 @@ process star {
 
   output:
     path "*.bam"
-    tuple val(sample_id), file("*.sortedByCoord.out.bam"), emit: alignment_out
+    tuple val(sample_id), file("*.sortedByCoord.out.bam") 
 
   script:
     """
@@ -188,15 +187,18 @@ workflow PROCESS_SAMPLE {
         input_ch
     main:
         fastqc(input_ch)
+        trimmed_reads = trimmomatic(input_ch)
+        fastqc2(trimmed_reads)
+        star(trimmed_reads)
 
-        trimmed_fastqs = Channel.fromList(trimmomatic(input_ch).fastq_out.collect())
-        fastqc2(trimmed_fastqs)
-        star_alignments = Channel.fromList(star(trimmed_fastqs).alignment_out.collect())
+        //fastqc2(trimmed_ch)
+        // star(trimmed_ch)
 
-        marked_duplicates_bam = Channel.fromList(mark_duplicate(star_alignments).marked_duplicates.collect())
-        qualimap(marked_duplicates_bam)
-        htseq_count(marked_duplicates_bam)
-        feature_count(marked_duplicates_bam)
+        // mark_duplicates(aligned_ch)
+
+        // qualimap(marked_duplicates_ch)
+        // htseq_count(marked_duplicates_ch)
+        // feature_count(marked_duplicates_ch)
 
     emit:
         fastqc.out
