@@ -31,7 +31,7 @@ process qualimap {
 process mark_duplicate {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir/", mode: 'copy', overwrite: false
+  publishDir "$params.out_dir/", pattern: "*.dup.srtd.bam*", mode: 'copy', overwrite: false
 
   input:
     tuple val(sample_id), file(alignment)
@@ -86,7 +86,7 @@ process fastqc2 {
 process trimmomatic {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir", pattern: "*.txt", mode: 'copy', overwrite: false
+  publishDir "$params.out_dir", pattern: "*.fq.gz", mode: 'copy', overwrite: false
 
   time '6.h'
 
@@ -108,7 +108,7 @@ process trimmomatic {
 process star {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  publishDir "$params.out_dir", mode: 'copy', overwrite: false
+  publishDir "$params.out_dir", pattern: "*.bam", mode: 'copy', overwrite: false
 
   time '6.h'
 
@@ -122,8 +122,7 @@ process star {
     tuple val(sample_id), file(read1), file(read2)
 
   output:
-    path "*.bam"
-    tuple val(sample_id), file("*.sortedByCoord.out.bam") 
+    tuple val(sample_id), file("*.sortedByCoord.out.bam")
 
   script:
     """
@@ -189,16 +188,11 @@ workflow PROCESS_SAMPLE {
         fastqc(input_ch)
         trimmed_reads = trimmomatic(input_ch)
         fastqc2(trimmed_reads)
-        star(trimmed_reads)
 
-        //fastqc2(trimmed_ch)
-        // star(trimmed_ch)
-
-        // mark_duplicates(aligned_ch)
-
-        // qualimap(marked_duplicates_ch)
-        // htseq_count(marked_duplicates_ch)
-        // feature_count(marked_duplicates_ch)
+        marked_duplicates_bams = mark_duplicate(star(trimmed_reads))
+        qualimap(marked_duplicates_bams)
+        htseq_count(marked_duplicates_bams)
+        feature_count(marked_duplicates_bams)
 
     emit:
         fastqc.out
