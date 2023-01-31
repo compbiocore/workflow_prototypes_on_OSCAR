@@ -88,6 +88,8 @@ process trimmomatic {
 
   publishDir "$params.out_dir", pattern: "*.fq.gz", mode: 'copy', overwrite: false
 
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
   time '6.h'
 
   cpus 8
