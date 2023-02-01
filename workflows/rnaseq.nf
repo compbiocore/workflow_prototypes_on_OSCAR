@@ -3,11 +3,31 @@ nextflow.enable.dsl=2
 
 params.reference_genome = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx"
 params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0.108.gtf"
+params.htseq_multisample = False
 
 
 if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
 }
+
+/*process build_star_index {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  output:
+   path ("genome_idx/")
+
+  script:
+   """
+    STAR --runThreadN 6 \
+--runMode genomeGenerate \
+--genomeDir chr1_hg38_index \
+--genomeFastaFiles /n/groups/hbctraining/intro_rnaseq_hpc/reference_data_ensembl38/Homo_sapiens.GRCh38.dna.chromosome.1.fa \
+--sjdbGTFfile /n/groups/hbctraining/intro_rnaseq_hpc/reference_data_ensembl38/Homo_sapiens.GRCh38.92.gtf \
+--sjdbOverhang 99
+   """
+}*/
 
 process qualimap {
   container 'cowmoo/rnaseq_pipeline:latest'
@@ -135,6 +155,29 @@ process star {
     """
 }
 
+process htseq_count_multisample {
+
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir", mode: 'copy', overwrite: false
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  cpus 16
+
+  input:
+    path(bams)
+
+  output:
+   path "*"
+
+  script:
+   """
+    htseq-count -s no -t exon -f bam -a 0 -r pos --additional-attr=gene_name --nonunique=all -i gene_id \
+    --secondary-alignments=score ${bams} ${params.gtf} > htseq_counts
+   """
+}
+
 process htseq_count {
   container 'cowmoo/rnaseq_pipeline:latest'
 
@@ -144,7 +187,6 @@ process htseq_count {
 
   cpus 16
 
-  
   time '3.h'
 
   memory '30.GB' 
@@ -193,11 +235,15 @@ workflow PROCESS_SAMPLE {
 
         marked_duplicates_bams = mark_duplicate(star(trimmed_reads))
         qualimap(marked_duplicates_bams)
-        htseq_count(marked_duplicates_bams)
+
+        if (!params.htseq_multisample) {
+            htseq_count(marked_duplicates_bams)
+        }
+
         feature_count(marked_duplicates_bams)
 
     emit:
-        fastqc.out
+        duplicate_bams = marked_duplicates_bams
 }
 
 // Function to resolve files
@@ -214,6 +260,10 @@ workflow {
 
      PROCESS_SAMPLE (samples_ch)
 
+     if (params.htseq_multisample) {
+        htseq_count_multisample(PROCESS_SAMPLE.duplicate_bams)
+     }
+
      emit:
-        PROCESS_SAMPLE.out
+        PROCESS_SAMPLE.duplicate_bams
 }
