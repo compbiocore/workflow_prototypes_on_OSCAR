@@ -3,7 +3,7 @@ nextflow.enable.dsl=2
 
 params.reference_genome = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx"
 params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0.108.gtf"
-params.htseq_multisample = False
+params.htseq_multisample = false
 
 
 if (!params.samplesheet || !params.out_dir) {
@@ -57,7 +57,8 @@ process mark_duplicate {
     tuple val(sample_id), file(alignment)
 
   output:
-    tuple val(sample_id), file("*.dup.srtd.bam"), file("*.dup.srtd.bam.bai") 
+    tuple val(sample_id), file("*.dup.srtd.bam"), file("*.dup.srtd.bam.bai"), emit: marked
+    tuple path("*.dup.srtd.bam"), emit: bams
 
   script:
    """
@@ -173,6 +174,7 @@ process htseq_count_multisample {
 
   script:
    """
+    samtools index -M ${bams}
     htseq-count -s no -t exon -f bam -a 0 -r pos --additional-attr=gene_name --nonunique=all -i gene_id \
     --secondary-alignments=score ${bams} ${params.gtf} > htseq_counts
    """
@@ -234,16 +236,16 @@ workflow PROCESS_SAMPLE {
         fastqc2(trimmed_reads)
 
         marked_duplicates_bams = mark_duplicate(star(trimmed_reads))
-        qualimap(marked_duplicates_bams)
+        qualimap(marked_duplicates_bams.marked)
 
         if (!params.htseq_multisample) {
-            htseq_count(marked_duplicates_bams)
+            htseq_count(marked_duplicates_bams.marked)
         }
 
-        feature_count(marked_duplicates_bams)
+        feature_count(marked_duplicates_bams.marked)
 
     emit:
-        duplicate_bams = marked_duplicates_bams
+        mark_duplicate.out.bams
 }
 
 // Function to resolve files
@@ -261,9 +263,9 @@ workflow {
      PROCESS_SAMPLE (samples_ch)
 
      if (params.htseq_multisample) {
-        htseq_count_multisample(PROCESS_SAMPLE.duplicate_bams)
+        htseq_count_multisample(PROCESS_SAMPLE.out.collect())
      }
 
      emit:
-        PROCESS_SAMPLE.duplicate_bams
+        PROCESS_SAMPLE.out
 }
