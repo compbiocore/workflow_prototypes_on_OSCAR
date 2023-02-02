@@ -4,13 +4,14 @@ nextflow.enable.dsl=2
 params.reference_genome = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx"
 params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0.108.gtf"
 params.htseq_multisample = false
+params.sjdbGTFfile = 99
 
 
 if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
 }
 
-/*process build_star_index {
+process build_star_index {
   container 'cowmoo/rnaseq_pipeline:latest'
 
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
@@ -21,13 +22,13 @@ if (!params.samplesheet || !params.out_dir) {
   script:
    """
     STAR --runThreadN 6 \
---runMode genomeGenerate \
---genomeDir chr1_hg38_index \
---genomeFastaFiles /n/groups/hbctraining/intro_rnaseq_hpc/reference_data_ensembl38/Homo_sapiens.GRCh38.dna.chromosome.1.fa \
---sjdbGTFfile /n/groups/hbctraining/intro_rnaseq_hpc/reference_data_ensembl38/Homo_sapiens.GRCh38.92.gtf \
---sjdbOverhang 99
+         --runMode genomeGenerate \
+         --genomeDir genome_idx \
+         --genomeFastaFiles ${params.reference_genome} \
+         --sjdbGTFfile ${params.gtf} \
+         --sjdbOverhang ${params.sjdbGTFfile}
    """
-}*/
+}
 
 process qualimap {
   container 'cowmoo/rnaseq_pipeline:latest'
@@ -230,6 +231,8 @@ process feature_count {
 workflow PROCESS_SAMPLE {
     take:
         input_ch
+        reference_genome
+
     main:
         fastqc(input_ch)
         trimmed_reads = trimmomatic(input_ch)
@@ -257,10 +260,16 @@ def get_sample_info(LinkedHashMap sample) {
 }
 
 workflow {
+     reference_genome = params.reference_genome
+
+     if (params.reference_genome_fasta) {
+        reference_genome = build_star_index().out
+     }
+
      Channel.fromPath(params.samplesheet).splitCsv(header:true)
             .map { get_sample_info(it) }.set { samples_ch }
 
-     PROCESS_SAMPLE (samples_ch)
+     PROCESS_SAMPLE (samples_ch, reference_genome)
 
      if (params.htseq_multisample) {
         htseq_count_multisample(PROCESS_SAMPLE.out.collect())
