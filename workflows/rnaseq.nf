@@ -23,7 +23,7 @@ process build_star_index {
   time '6.h'
 
   output:
-   path ("genome_idx/*")
+   path ("genome_idx")
 
   script:
    """
