@@ -173,6 +173,7 @@ process star {
 
   input:
     tuple val(sample_id), file(read1), file(read2)
+    path(reference_genome)
 
   output:
     tuple val(sample_id), file("*.sortedByCoord.out.bam")
@@ -268,7 +269,7 @@ workflow PROCESS_SAMPLE {
         fastqcs = fastqc2(trimmed_reads).out.collect()
         multiqc(fastqcs)
 
-        marked_duplicates_bams = mark_duplicate(star(trimmed_reads))
+        marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
         qualimap(marked_duplicates_bams.marked)
 
         if (!params.htseq_multisample) {
