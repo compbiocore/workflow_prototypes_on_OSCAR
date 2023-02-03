@@ -16,16 +16,23 @@ process build_star_index {
 
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
+  cpus 6
+
+  memory '25.GB'
+
+  time '6.h'
+
   output:
-   path ("genome_idx/")
+   path ("genome_idx/*")
 
   script:
    """
     STAR --runThreadN 6 \
          --runMode genomeGenerate \
          --genomeDir genome_idx \
-         --genomeFastaFiles ${params.reference_genome} \
-         --sjdbGTFfile ${params.gtf} \
+	 --genomeSAindexNbases 12 \
+         --genomeFastaFiles ${file(params.reference_genome_fasta)} \
+         --sjdbGTFfile ${file(params.gtf)} \
          --sjdbOverhang ${params.sjdbGTFfile}
    """
 }
@@ -150,7 +157,7 @@ process star {
 
   script:
     """
-     STAR --genomeLoad NoSharedMemory --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${params.reference_genome} \
+     STAR --genomeLoad NoSharedMemory --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${reference_genome} \
           --quantMode GeneCounts --twopassMode Basic --sjdbGTFfile ${params.gtf} -outReadsUnmapped Fastx \
           --outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c --readFilesIn ${read1} ${read2} \
           --outFileNamePrefix ${sample_id}
@@ -263,7 +270,7 @@ workflow {
      reference_genome = params.reference_genome
 
      if (params.reference_genome_fasta) {
-        reference_genome = build_star_index().out
+        reference_genome = build_star_index()
      }
 
      Channel.fromPath(params.samplesheet).splitCsv(header:true)
