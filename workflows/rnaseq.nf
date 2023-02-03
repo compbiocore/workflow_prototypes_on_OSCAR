@@ -11,6 +11,26 @@ if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
 }
 
+
+process multiqc {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  publishDir "$params.out_dir/qc", mode: 'copy', overwrite: false
+
+  input:
+   path(fastqcs)
+
+  output:
+   path("*")
+
+  script:
+   """
+    multiqc *_fastqc.zip
+   """
+}
+
 process build_star_index {
   container 'cowmoo/rnaseq_pipeline:latest'
 
@@ -23,19 +43,21 @@ process build_star_index {
   time '6.h'
 
   output:
-   path ("genome_idx/*")
+   path ("genome_idx")
 
   script:
    """
     STAR --runThreadN 6 \
          --runMode genomeGenerate \
          --genomeDir genome_idx \
-	 --genomeSAindexNbases 12 \
+	     --genomeSAindexNbases 12 \
          --genomeFastaFiles ${file(params.reference_genome_fasta)} \
          --sjdbGTFfile ${file(params.gtf)} \
          --sjdbOverhang ${params.sjdbGTFfile}
    """
 }
+
+
 
 process qualimap {
   container 'cowmoo/rnaseq_pipeline:latest'
@@ -103,7 +125,7 @@ process fastqc2 {
     tuple val(sample_id), file(read1), file(read2)
 
   output:
-    path "*"
+    path "*_fastqc.zip"
 
   script:
     """
@@ -243,7 +265,8 @@ workflow PROCESS_SAMPLE {
     main:
         fastqc(input_ch)
         trimmed_reads = trimmomatic(input_ch)
-        fastqc2(trimmed_reads)
+        fastqcs = fastqc2(trimmed_reads).out.collect()
+        multiqc(fastqcs)
 
         marked_duplicates_bams = mark_duplicate(star(trimmed_reads))
         qualimap(marked_duplicates_bams.marked)
