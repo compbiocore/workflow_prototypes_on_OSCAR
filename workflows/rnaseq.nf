@@ -5,12 +5,35 @@ params.reference_genome = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/refer
 params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0.108.gtf"
 params.htseq_multisample = false
 params.sjdbGTFfile = 99
+params.fastqscreen_conf = "/gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/metadata/fastqscreen_mouse_rnaseq.conf"
 
 
 if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
 }
 
+process fastq_screen {
+
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  time '6.h'
+
+  publishDir "$params.outdir/qc/"
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
+
+  input:
+    tuple val(sample_id), file(read1), file(read2)
+
+  output:
+    path "${sample_id}_fastq_screen"
+
+  """
+  /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${read1} ${read2}
+  """
+}
 
 process multiqc {
   container 'cowmoo/rnaseq_pipeline:latest'
@@ -268,6 +291,7 @@ workflow PROCESS_SAMPLE {
         trimmed_reads = trimmomatic(input_ch)
         fastqcs = fastqc2(trimmed_reads).out.collect()
         multiqc(fastqcs)
+        fastq_screen(trimmed_reads)
 
         marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
         qualimap(marked_duplicates_bams.marked)
