@@ -5,6 +5,7 @@ params.reference_genome = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/refer
 params.gtf = "/gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0.108.gtf"
 params.htseq_multisample = false
 params.sjdbGTFfile = 99
+params.reference_genome_fasta = ""
 
 
 if (!params.samplesheet || !params.out_dir) {
@@ -50,10 +51,10 @@ process build_star_index {
     STAR --runThreadN 6 \
          --runMode genomeGenerate \
          --genomeDir genome_idx \
-	     --genomeSAindexNbases 12 \
+	 --genomeSAindexNbases 12 \
          --genomeFastaFiles ${file(params.reference_genome_fasta)} \
          --sjdbGTFfile ${file(params.gtf)} \
-         --sjdbOverhang ${params.sjdbGTFfile}
+	 --sjdbOverhang ${params.sjdbGTFfile}
    """
 }
 
@@ -266,7 +267,7 @@ workflow PROCESS_SAMPLE {
     main:
         fastqc(input_ch)
         trimmed_reads = trimmomatic(input_ch)
-        fastqcs = fastqc2(trimmed_reads).out.collect()
+        fastqcs = fastqc2(trimmed_reads).collect()
         multiqc(fastqcs)
 
         marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
@@ -293,7 +294,7 @@ def get_sample_info(LinkedHashMap sample) {
 workflow {
      reference_genome = params.reference_genome
 
-     if (params.reference_genome_fasta) {
+     if (params.reference_genome_fasta != "") {
         reference_genome = build_star_index()
      }
 
