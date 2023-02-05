@@ -21,7 +21,7 @@ process fastq_screen {
 
   time '6.h'
 
-  publishDir "$params.outdir/qc/"
+  publishDir "$params.out_dir/qc/", mode: 'copy', overwrite: false
 
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
 
@@ -29,7 +29,7 @@ process fastq_screen {
     tuple val(sample_id), file(read1), file(read2)
 
   output:
-    path "${sample_id}_fastq_screen"
+    path "${sample_id}_fastq_screen/*"
 
   """
   /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${read1} ${read2}
@@ -294,6 +294,8 @@ workflow PROCESS_SAMPLE {
         multiqc(fastqcs)
         fastq_screen(trimmed_reads)
 
+        mark_duplicate_bams = null
+
         if (!params.qc_only) {
             marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
             qualimap(marked_duplicates_bams.marked)
@@ -303,10 +305,11 @@ workflow PROCESS_SAMPLE {
             }
 
             feature_count(marked_duplicates_bams.marked)
+            mark_duplicate_bams = marked_duplicates_bams.bams.collect()
         }
 
     emit:
-        mark_duplicate.out.bams
+        mark_duplicate_bams
 }
 
 // Function to resolve files
@@ -333,6 +336,4 @@ workflow {
         htseq_count_multisample(PROCESS_SAMPLE.out.collect())
      }
 
-     emit:
-        PROCESS_SAMPLE.out
 }
