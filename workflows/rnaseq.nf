@@ -7,6 +7,7 @@ params.htseq_multisample = false
 params.sjdbGTFfile = 99
 params.reference_genome_fasta = ""
 params.fastqscreen_conf = "/gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/metadata/fastqscreen_mouse_rnaseq.conf"
+params.qc_only = false
 
 if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
@@ -293,14 +294,16 @@ workflow PROCESS_SAMPLE {
         multiqc(fastqcs)
         fastq_screen(trimmed_reads)
 
-        marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
-        qualimap(marked_duplicates_bams.marked)
+        if (!params.qc_only) {
+            marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
+            qualimap(marked_duplicates_bams.marked)
 
-        if (!params.htseq_multisample) {
-            htseq_count(marked_duplicates_bams.marked)
+            if (!params.htseq_multisample) {
+                htseq_count(marked_duplicates_bams.marked)
+            }
+
+            feature_count(marked_duplicates_bams.marked)
         }
-
-        feature_count(marked_duplicates_bams.marked)
 
     emit:
         mark_duplicate.out.bams
@@ -326,7 +329,7 @@ workflow {
 
      PROCESS_SAMPLE (samples_ch, reference_genome)
 
-     if (params.htseq_multisample) {
+     if (params.htseq_multisample && !params.qc_only) {
         htseq_count_multisample(PROCESS_SAMPLE.out.collect())
      }
 
