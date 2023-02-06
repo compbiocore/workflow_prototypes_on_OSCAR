@@ -239,6 +239,7 @@ process htseq_count_multisample {
     samtools index -M ${bams}
     htseq-count -s no -t exon -f bam -a 0 -r pos --additional-attr=gene_name --nonunique=all -i gene_id \
     --secondary-alignments=score ${bams} ${params.gtf} > htseq_counts
+    echo ${bams} | sed -e '1s/^/gene\t/;s/\.bam//g' | cat - htseq_counts > tmpfile && mv tmpfile htseq_counts
    """
 }
 
