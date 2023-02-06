@@ -45,13 +45,14 @@ process multiqc {
 
   input:
    path(fastqcs)
+   path(fastq_screens)
 
   output:
    path("*")
 
   script:
    """
-    multiqc *_fastqc.zip
+    multiqc *_fastqc.zip *_fastq_screen
    """
 }
 
@@ -291,8 +292,8 @@ workflow PROCESS_SAMPLE {
         fastqc(input_ch)
         trimmed_reads = trimmomatic(input_ch)
         fastqcs = fastqc2(trimmed_reads).collect()
-        multiqc(fastqcs)
-        fastq_screen(trimmed_reads)
+        fastqc_screens = fastq_screen(trimmed_reads).collect()
+        multiqc(fastqcs, fastqc_screens)
 
         mark_duplicate_bams = null
 
