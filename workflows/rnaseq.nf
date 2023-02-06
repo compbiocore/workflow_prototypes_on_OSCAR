@@ -21,6 +21,10 @@ process fastq_screen {
 
   time '6.h'
 
+  cpus 6 
+
+  memory '25.GB'
+
   publishDir "$params.out_dir/qc/", mode: 'copy', overwrite: false
 
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
@@ -52,7 +56,7 @@ process multiqc {
 
   script:
    """
-    multiqc *_fastqc.zip *_fastq_screen
+    multiqc *_fastqc.zip *_screen.txt
    """
 }
 
@@ -169,6 +173,8 @@ process trimmomatic {
   time '6.h'
 
   cpus 8
+
+  memory '25.GB' 
 
   input:
     tuple val(sample_id), file(read1), file(read2)
