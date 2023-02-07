@@ -139,7 +139,7 @@ process fastqc {
     path "*"
 
   script:
-    if (read2 != "") {
+   if (read2 != "")
      """
       fastqc ${read1}
       fastqc ${read2}
