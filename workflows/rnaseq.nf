@@ -139,7 +139,7 @@ process fastqc {
     path "*"
 
   script:
-   if (read2 != "")
+   if (read2.size() > 0)
      """
       fastqc ${read1}
       fastqc ${read2}
@@ -182,13 +182,13 @@ process trimmomatic {
   memory '25.GB' 
 
   input:
-    tuple val(sample_id), file(read1), file(read2)
+    tuple val(sample_id), file(read1), file(read2), optional: true
 
   output:
     tuple val(sample_id), file("fastq/${sample_id}_tr_1P.fq.gz"), file("fastq/${sample_id}_tr_2P.fq.gz")
 
   script:
-    if (read2 != "")
+    if (read2.size() > 0)
      """
       mkdir fastq logs
       TrimmomaticPE -threads 8 -trimlog logs/${sample_id}_trimmomatic_PE.log ${read1} ${read2} -baseout fastq/${sample_id}_tr.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-PE-2.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
@@ -196,7 +196,7 @@ process trimmomatic {
     else
      """
       mkdir fastq logs
-      TrimmomaticPE -threads 8 -trimlog logs/${sample_id}_trimmomatic_PE.log ${read1} -baseout fastq/${sample_id}_tr.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-PE-2.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
+      TrimmomaticSE -threads 8 -trimlog logs/${sample_id}_trimmomatic_SE.log ${read1} fastq/${sample_id}_tr_1P.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-SE.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
      """
 }
 
