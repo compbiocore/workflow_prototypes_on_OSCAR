@@ -187,10 +187,10 @@ process trimmomatic {
   memory '25.GB' 
 
   input:
-    tuple val(sample_id), file(read1), file(read2), optional: true
+    tuple val(sample_id), file(read1), file(read2)
 
   output:
-    tuple val(sample_id), path("fastq/*.fq.gz")
+    tuple val(sample_id), path("fastq/*P.fq.gz")
 
   script:
     if (read2.size() > 0)
@@ -201,7 +201,7 @@ process trimmomatic {
     else
      """
       mkdir fastq logs
-      TrimmomaticSE -threads 8 -trimlog logs/${sample_id}_trimmomatic_SE.log ${read1} fastq/${sample_id}_tr.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-SE.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
+      TrimmomaticSE -threads 8 -trimlog logs/${sample_id}_trimmomatic_SE.log ${read1} fastq/${sample_id}_trP.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-SE.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
      """
 }
 
@@ -219,7 +219,7 @@ process star {
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
   input:
-    tuple val(sample_id), file(read1), file(read2)
+    tuple val(sample_id), path(reads)
     path(reference_genome)
 
   output:
@@ -229,7 +229,7 @@ process star {
     """
      STAR --genomeLoad NoSharedMemory --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${reference_genome} \
           --quantMode GeneCounts --twopassMode Basic --sjdbGTFfile ${params.gtf} -outReadsUnmapped Fastx \
-          --outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c --readFilesIn ${read1} ${read2} \
+          --outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c --readFilesIn ${reads} \
           --outFileNamePrefix ${sample_id}
     """
 }
