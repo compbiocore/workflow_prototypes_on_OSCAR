@@ -30,13 +30,13 @@ process fastq_screen {
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
 
   input:
-    tuple val(sample_id), file(read1), file(read2)
+    tuple val(sample_id), path(reads)
 
   output:
     path "${sample_id}_fastq_screen/*"
 
   """
-  /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${read1} ${read2}
+  /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${reads}
   """
 }
 
@@ -156,16 +156,21 @@ process fastqc2 {
   publishDir "$params.out_dir/qc", mode: 'copy', overwrite: false
 
   input:
-    tuple val(sample_id), file(read1), file(read2)
+    tuple val(sample_id), path(reads)
 
   output:
     path "*_fastqc.zip"
 
   script:
-    """
-     fastqc ${read1}
-     fastqc ${read2}
-    """
+    if (reads.size() > 1)
+     """
+      fastqc ${reads[0]}
+      fastqc ${reads[1]}
+     """
+   else
+     """
+      fastqc ${reads[0]}
+     """
 }
 
 process trimmomatic {
@@ -185,7 +190,7 @@ process trimmomatic {
     tuple val(sample_id), file(read1), file(read2), optional: true
 
   output:
-    tuple val(sample_id), file("fastq/${sample_id}_tr_1P.fq.gz"), file("fastq/${sample_id}_tr_2P.fq.gz")
+    tuple val(sample_id), path("fastq/*.fq.gz")
 
   script:
     if (read2.size() > 0)
@@ -196,7 +201,7 @@ process trimmomatic {
     else
      """
       mkdir fastq logs
-      TrimmomaticSE -threads 8 -trimlog logs/${sample_id}_trimmomatic_SE.log ${read1} fastq/${sample_id}_tr_1P.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-SE.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
+      TrimmomaticSE -threads 8 -trimlog logs/${sample_id}_trimmomatic_SE.log ${read1} fastq/${sample_id}_tr.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-SE.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
      """
 }
 
