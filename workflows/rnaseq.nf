@@ -8,6 +8,7 @@ params.sjdbGTFfile = 99
 params.reference_genome_fasta = ""
 params.fastqscreen_conf = "/gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/metadata/fastqscreen_mouse_rnaseq.conf"
 params.qc_only = false
+params.kraken = false
 
 if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
@@ -79,10 +80,10 @@ process build_star_index {
     STAR --runThreadN 6 \
          --runMode genomeGenerate \
          --genomeDir genome_idx \
-	 --genomeSAindexNbases 12 \
+         --genomeSAindexNbases 12 \
          --genomeFastaFiles ${file(params.reference_genome_fasta)} \
          --sjdbGTFfile ${file(params.gtf)} \
-	 --sjdbOverhang ${params.sjdbGTFfile}
+         --sjdbOverhang ${params.sjdbGTFfile}
    """
 }
 
@@ -171,6 +172,29 @@ process fastqc2 {
      """
       fastqc ${reads[0]}
      """
+}
+
+process kraken {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir", pattern: "*.txt", mode: 'copy', overwrite: false
+
+  containerOptions '-v /gpfs/data/cbc/pcao5/minikraken2_v2_8GB_201904_UPDATE:/db'
+
+  input:
+    tuple val(sample_id), file(read1), file(read2)
+
+  output:
+    path "*.txt"
+
+  if (read2.size() > 0)
+    """
+     /kraken2-2.1.2/kraken2/kraken2 --paired -db /db ${read1} ${read2} --gzip-compressed --output ${sample_id}_kraken_log.txt --report ${sample_id}_kraken.txt
+    """
+  else
+    """
+     /kraken2-2.1.2/kraken2/kraken2 -db /db ${read1} --gzip-compressed --output ${sample_id}_kraken_log.txt --report ${sample_id}_kraken.txt
+    """
 }
 
 process trimmomatic {
@@ -313,6 +337,11 @@ workflow PROCESS_SAMPLE {
 
     main:
         fastqc(input_ch)
+
+        if (params.kraken) {
+            kraken(input_ch)
+        }
+
         trimmed_reads = trimmomatic(input_ch)
         fastqcs = fastqc2(trimmed_reads).collect()
         fastqc_screens = fastq_screen(trimmed_reads).collect()
