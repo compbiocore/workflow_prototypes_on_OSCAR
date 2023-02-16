@@ -160,7 +160,7 @@ process fastqc2 {
     tuple val(sample_id), path(reads)
 
   output:
-    path "*_fastqc.zip"
+    path "*"
 
   script:
     if (reads.size() > 1)
@@ -180,6 +180,8 @@ process kraken {
   publishDir "$params.out_dir", pattern: "*.txt", mode: 'copy', overwrite: false
 
   containerOptions '-v /gpfs/data/cbc/pcao5/minikraken2_v2_8GB_201904_UPDATE:/db'
+
+  memory '10.GB'
 
   input:
     tuple val(sample_id), file(read1), file(read2)
