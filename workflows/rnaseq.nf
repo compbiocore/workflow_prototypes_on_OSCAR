@@ -179,7 +179,11 @@ process kraken {
 
   publishDir "$params.out_dir", pattern: "*.txt", mode: 'copy', overwrite: false
 
-  containerOptions '-v /gpfs/data/cbc/pcao5/minikraken2_v2_8GB_201904_UPDATE:/db'
+  containerOptions '--bind /gpfs/data/cbc/pcao5/minikraken2_v2_8GB_201904_UPDATE:/db'
+
+  memory '30.GB'
+
+  time '2.h'
 
   memory '10.GB'
 
@@ -188,12 +192,13 @@ process kraken {
 
   output:
     path "*.txt"
-
-  if (read2.size() > 0)
+  
+  script:
+   if (read2.size() > 0)
     """
      /kraken2-2.1.2/kraken2/kraken2 --paired -db /db ${read1} ${read2} --gzip-compressed --output ${sample_id}_kraken_log.txt --report ${sample_id}_kraken.txt
     """
-  else
+   else
     """
      /kraken2-2.1.2/kraken2/kraken2 -db /db ${read1} --gzip-compressed --output ${sample_id}_kraken_log.txt --report ${sample_id}_kraken.txt
     """
