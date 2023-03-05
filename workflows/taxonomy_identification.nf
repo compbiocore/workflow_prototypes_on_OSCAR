@@ -353,6 +353,6 @@ workflow {
      Channel.fromPath(params.samplesheet).splitCsv(header:true)
             .map { get_sample_info(it) }.set { samples_ch }
 
-     PROCESS_SAMPLE (samples_ch, reference_genome)
+     PROCESS_SAMPLE (samples_ch)
 
 }
