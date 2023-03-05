@@ -135,11 +135,30 @@ process seqtk {
     tuple val(sample_id), file(read1), file(read2)
 
   output:
-    path "sub_sampled.fq.gz"
+    tuple val(sample_id), path("sub_sampled.fasta")
 
   script:
    """
     seqtk sample -s 123 ${read1} 100 > sub_sampled.fq.gz
+    seqtk seq -a S1_1.fq.gz > sub_sampled.fasta
+   """
+}
+
+
+process blastNR {
+  container 'https://depot.galaxyproject.org/singularity/blast%3A2.13.0--hf3cf87c_0'
+
+  containerOptions '-B /gpfs/data/shared/databases/refchef_refs/'
+
+  input:
+    tuple val(sample_id), path(fasta)
+
+  output:
+    tuple val(sample_id), path("blast.xml")
+
+  script:
+   """
+    blastn -num_threads 4 -query ${fasta} -db /gpfs/data/shared/databases/refchef_refs/nt_db/blast_db/nt -out blast.xml -outfmt 5
    """
 }
 
@@ -334,8 +353,8 @@ workflow PROCESS_SAMPLE {
         input_ch
 
     main:
-        seqtk(input_ch)
-
+        sampled_reads = seqtk(input_ch)
+        blasts = blastNR(sampled_reads).collect()
 }
 
 // Function to resolve files
