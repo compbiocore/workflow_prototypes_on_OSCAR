@@ -140,10 +140,9 @@ process seqtk {
   script:
    """
     seqtk sample -s 123 ${read1} 100 > sub_sampled.fq.gz
-    seqtk seq -a S1_1.fq.gz > sub_sampled.fasta
+    seqtk seq -a sub_sampled.fq.gz > sub_sampled.fasta
    """
 }
-
 
 process blastNR {
   container 'https://depot.galaxyproject.org/singularity/blast%3A2.13.0--hf3cf87c_0'
@@ -162,27 +161,19 @@ process blastNR {
    """
 }
 
-process fastqc2 {
-  container 'cowmoo/rnaseq_pipeline:latest'
-
-  publishDir "$params.out_dir/qc", mode: 'copy', overwrite: false
+process megan_process {
+  container 'https://depot.galaxyproject.org/singularity/megan%3A6.24.20--h9ee0642_0'
 
   input:
-    tuple val(sample_id), path(reads)
+    tuple val(sample_id), path(xml)
 
   output:
-    path "*"
+    tuple val(sample_id), path("blast.xml")
 
   script:
-    if (reads.size() > 1)
-     """
-      fastqc ${reads[0]}
-      fastqc ${reads[1]}
-     """
-   else
-     """
-      fastqc ${reads[0]}
-     """
+   """
+    blastn -num_threads 4 -query ${fasta} -db /gpfs/data/shared/databases/refchef_refs/nt_db/blast_db/nt -out blast.xml -outfmt 5
+   """
 }
 
 process kraken {
@@ -213,139 +204,6 @@ process kraken {
     """
      /kraken2-2.1.2/kraken2/kraken2 -db /db ${read1} --gzip-compressed --output ${sample_id}_kraken_log.txt --report ${sample_id}_kraken.txt
     """
-}
-
-process trimmomatic {
-  container 'cowmoo/rnaseq_pipeline:latest'
-
-  publishDir "$params.out_dir", pattern: "*.fq.gz", mode: 'copy', overwrite: false
-
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
-
-  time '6.h'
-
-  cpus 8
-
-  memory '25.GB'
-
-  input:
-    tuple val(sample_id), file(read1), file(read2)
-
-  output:
-    tuple val(sample_id), path("fastq/*P.fq.gz")
-
-  script:
-    if (read2.size() > 0)
-     """
-      mkdir fastq logs
-      TrimmomaticPE -threads 8 -trimlog logs/${sample_id}_trimmomatic_PE.log ${read1} ${read2} -baseout fastq/${sample_id}_tr.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-PE-2.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
-     """
-    else
-     """
-      mkdir fastq logs
-      TrimmomaticSE -threads 8 -trimlog logs/${sample_id}_trimmomatic_SE.log ${read1} fastq/${sample_id}_trP.fq.gz ILLUMINACLIP:/gpfs/data/cbc/cbc_conda_v1/envs/cbc_conda/opt/trimmomatic-0.36/adapters/TruSeq3-SE.fa:2:30:5:6:true SLIDINGWINDOW:10:25 MINLEN:50
-     """
-}
-
-process star {
-  container 'cowmoo/rnaseq_pipeline:latest'
-
-  publishDir "$params.out_dir", pattern: "*.bam", mode: 'copy', overwrite: false
-
-  time '6.h'
-
-  cpus 16
-
-  memory '75.GB'
-
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
-
-  input:
-    tuple val(sample_id), path(reads)
-    path(reference_genome)
-
-  output:
-    tuple val(sample_id), file("*.sortedByCoord.out.bam")
-
-  script:
-    """
-     STAR --genomeLoad NoSharedMemory --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${reference_genome} \
-          --quantMode GeneCounts --twopassMode Basic --sjdbGTFfile ${params.gtf} -outReadsUnmapped Fastx \
-          --outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c --readFilesIn ${reads} \
-          --outFileNamePrefix ${sample_id}
-    """
-}
-
-process htseq_count_multisample {
-
-  container 'cowmoo/rnaseq_pipeline:latest'
-
-  publishDir "$params.out_dir", mode: 'copy', overwrite: false
-
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
-
-  cpus 16
-
-  input:
-    path(bams)
-
-  output:
-   path "*"
-
-  script:
-   $/
-    samtools index -M ${bams}
-    htseq-count -s no -t exon -f bam -a 0 -r pos --additional-attr=gene_name --nonunique=all -i gene_id \
-    --secondary-alignments=score ${bams} ${params.gtf} > htseq_counts
-    echo ${bams} | sed -e '1s/^/gene gene_name /;s/\.dup.srtd.bam//g' |  tr ' ' \\t | cat - htseq_counts > tmpfile && mv tmpfile htseq_counts
-   /$
-}
-
-process htseq_count {
-  container 'cowmoo/rnaseq_pipeline:latest'
-
-  publishDir "$params.out_dir", mode: 'copy', overwrite: false
-
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
-
-  cpus 16
-
-  time '3.h'
-
-  memory '30.GB'
-
-  input:
-   tuple val(sample_id), file(bam), file(bam_index)
-
-  output:
-   path "*"
-
-  script:
-   """
-    htseq-count -s no -t exon -f bam -a 0 -r pos --additional-attr=gene_name --nonunique=all -i gene_id \
-    --secondary-alignments=score ${bam} ${params.gtf} > ${sample_id}_htseq_counts
-   """
-}
-
-process feature_count {
-  container 'cowmoo/rnaseq_pipeline:latest'
-
-  publishDir "$params.out_dir/expressions/", mode: 'copy', overwrite: false
-
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
-
-  memory '8.GB'
-
-  input:
-   tuple val(sample_id), file(bam), file(bam_index)
-
-  output:
-   path "*"
-
-  script:
-   """
-    featureCounts -p -s 0 -M --fracOverlap 0.8 -O -a ${params.gtf} -o ${sample_id}.featureCounts.txt ${bam}
-   """
 }
 
 workflow PROCESS_SAMPLE {
