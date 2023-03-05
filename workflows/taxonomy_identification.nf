@@ -129,7 +129,7 @@ process mark_duplicate {
 }
 
 process seqtk {
-  container 'quay.io/biocontainers/seqtk'
+  container 'https://depot.galaxyproject.org/singularity/seqtk%3A1.3--h7132678_4'
 
   input:
     tuple val(sample_id), file(read1), file(read2)
@@ -334,10 +334,8 @@ workflow PROCESS_SAMPLE {
         input_ch
 
     main:
-        sub_sample_reads(input_ch)
+        seqtk(input_ch)
 
-    emit:
-        mark_duplicate_bams
 }
 
 // Function to resolve files
