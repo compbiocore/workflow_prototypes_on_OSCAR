@@ -174,6 +174,10 @@ process megan_process {
 
   publishDir "$params.out_dir/", mode: 'copy', overwrite: false
 
+  cpus 2
+
+  memory '14.GB'
+
   input:
     tuple val(sample_id), path(xml)
 
