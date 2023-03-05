@@ -131,6 +131,10 @@ process mark_duplicate {
 process seqtk {
   container 'https://depot.galaxyproject.org/singularity/seqtk%3A1.3--h7132678_4'
 
+  cpus 2
+
+  memory '10.GB'
+
   input:
     tuple val(sample_id), file(read1), file(read2)
 
@@ -149,6 +153,10 @@ process blastNR {
 
   containerOptions '-B /gpfs/data/shared/databases/refchef_refs/'
 
+  cpus 4
+
+  memory '12.GB'
+
   input:
     tuple val(sample_id), path(fasta)
 
@@ -164,15 +172,18 @@ process blastNR {
 process megan_process {
   container 'https://depot.galaxyproject.org/singularity/megan%3A6.24.20--h9ee0642_0'
 
+  publishDir "$params.out_dir/", mode: 'copy', overwrite: false
+
   input:
     tuple val(sample_id), path(xml)
 
   output:
-    tuple val(sample_id), path("blast.xml")
+    tuple val(sample_id), path("${sample_id}.out")
 
   script:
    """
-    blastn -num_threads 4 -query ${fasta} -db /gpfs/data/shared/databases/refchef_refs/nt_db/blast_db/nt -out blast.xml -outfmt 5
+    blast2rma -i ${xml} --format BlastXML --out out.rma
+    rma2info -i out.rma -c2c Taxonomy -n -s -r -o ${sample_id}.out
    """
 }
 
@@ -211,8 +222,10 @@ workflow PROCESS_SAMPLE {
         input_ch
 
     main:
+        kraken(input_ch)
         sampled_reads = seqtk(input_ch)
         blasts = blastNR(sampled_reads).collect()
+        megan_outs = megan_process(blasts).collect()
 }
 
 // Function to resolve files
