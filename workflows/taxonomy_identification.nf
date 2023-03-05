@@ -143,7 +143,7 @@ process seqtk {
 
   script:
    """
-    seqtk sample -s 123 ${read1} 100 > sub_sampled.fq.gz
+    seqtk sample -s 123 ${read1} 1000 > sub_sampled.fq.gz
     seqtk seq -a sub_sampled.fq.gz > sub_sampled.fasta
    """
 }
@@ -153,9 +153,9 @@ process blastNR {
 
   containerOptions '-B /gpfs/data/shared/databases/refchef_refs/'
 
-  cpus 4
+  cpus 6
 
-  memory '12.GB'
+  memory '25.GB'
 
   input:
     tuple val(sample_id), path(fasta)
@@ -165,7 +165,7 @@ process blastNR {
 
   script:
    """
-    blastn -num_threads 4 -query ${fasta} -db /gpfs/data/shared/databases/refchef_refs/nt_db/blast_db/nt -out blast.xml -outfmt 5
+    blastn -num_threads 6 -query ${fasta} -db /gpfs/data/shared/databases/refchef_refs/nt_db/blast_db/nt -out blast.xml -outfmt 5
    """
 }
 
