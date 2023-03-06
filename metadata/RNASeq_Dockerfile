@@ -53,3 +53,34 @@ RUN wget https://github.com/alexdobin/STAR/archive/2.7.10b.tar.gz
 RUN tar -xzf 2.7.10b.tar.gz
 RUN ln -s /STAR-2.7.10b/bin/Linux_x86_64/STAR /usr/local/bin/STAR
 RUN ln -s /qualimap_v2.2.1/qualimap /usr/local/bin/qualimap
+
+#Multi-QC
+RUN pip install multiqc
+
+#fastq screen
+RUN wget https://github.com/StevenWingett/FastQ-Screen/archive/refs/tags/v0.15.2.tar.gz
+RUN tar -xvf v0.15.2.tar.gz
+
+#install bwa
+RUN git clone https://github.com/lh3/bwa.git
+RUN apt-get install -y zlib1g zlib1g-dev cpanminus pkg-config libgd-gd2-perl libgd-dev
+RUN cd bwa; make
+RUN ln -s /bwa/bwa /usr/bin/bwa
+RUN cpanm GD::Graph::bars
+
+#kraken2
+RUN wget https://github.com/DerrickWood/kraken2/archive/refs/tags/v2.1.2.tar.gz
+RUN tar -xvf v2.1.2.tar.gz
+RUN cd /kraken2-2.1.2/ && ./install_kraken2.sh kraken2
+
+#fix numpy verisoning issue
+RUN pip install --upgrade numpy
+
+#install HOMER
+RUN apt-get install zip
+RUN mkdir /homer
+RUN cd /homer && wget http://homer.ucsd.edu/homer/configureHomer.pl
+RUN perl /homer/configureHomer.pl -install
+
+#clean-up
+RUN rm -rf 2.7.10b.tar.gz v0.15.2.tar.gz v2.1.2.tar.gz samtools-1.16.1.tar.bz2 biobambam2_x86_64-linux-gnu_2.0.180.tar.xz fastqc_v0.11.9.zip qualimap_v2.2.1.zip
