@@ -228,8 +228,8 @@ workflow PROCESS_SAMPLE {
     main:
         kraken(input_ch)
         sampled_reads = seqtk(input_ch)
-        blasts = blastNR(sampled_reads).collect()
-        megan_outs = megan_process(blasts).collect()
+        blasts = blastNR(sampled_reads)
+        megan_outs = megan_process(blasts)
 }
 
 // Function to resolve files
