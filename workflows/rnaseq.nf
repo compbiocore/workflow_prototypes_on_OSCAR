@@ -37,7 +37,7 @@ process fastq_screen {
     path "${sample_id}_fastq_screen/*"
 
   """
-  /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${reads}
+  /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${reads} --subset 0
   """
 }
 
