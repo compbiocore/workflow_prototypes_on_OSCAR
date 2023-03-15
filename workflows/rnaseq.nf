@@ -92,7 +92,7 @@ process build_star_index {
 process qualimap {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'  
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
 
   publishDir "$params.out_dir/qc/${sample_id}", mode: 'copy', overwrite: false
 
@@ -271,7 +271,7 @@ process htseq_count_multisample {
 
   publishDir "$params.out_dir", mode: 'copy', overwrite: false
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
 
   cpus 16
 
@@ -295,7 +295,7 @@ process htseq_count {
 
   publishDir "$params.out_dir", mode: 'copy', overwrite: false
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
 
   cpus 16
 
@@ -321,7 +321,7 @@ process feature_count {
 
   publishDir "$params.out_dir/expressions/", mode: 'copy', overwrite: false
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
 
   memory '8.GB'
 
