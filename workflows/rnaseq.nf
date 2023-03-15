@@ -96,6 +96,10 @@ process qualimap {
 
   publishDir "$params.out_dir/qc/${sample_id}", mode: 'copy', overwrite: false
 
+  memory '25.GB'
+
+  time '6.h'
+
   input:
    tuple val(sample_id), file(bam), file(bam_index)
 
@@ -299,7 +303,7 @@ process htseq_count {
 
   cpus 16
 
-  time '3.h'
+  time '5.h'
 
   memory '30.GB' 
 
@@ -324,6 +328,8 @@ process feature_count {
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
 
   memory '8.GB'
+
+  time '5.h'
 
   input:
    tuple val(sample_id), file(bam), file(bam_index)
