@@ -392,8 +392,8 @@ workflow PROCESS_SAMPLE {
         //mark_duplicate_bams = null
 
         if (!params.qc_only) {
-            marked_duplicates_bams = mark_duplicate(star_strict(trimmed_reads, reference_genome))
-            marked_duplicate_bams = mark_duplicate(star_loose(trimmed_reads, reference_genome))
+            strict_bams = star_strict(trimmed_reads, reference_genome))
+            loose_bams = star_loose(trimmed_reads, reference_genome))
 
             //qualimap(marked_duplicates_bams.marked)
 
