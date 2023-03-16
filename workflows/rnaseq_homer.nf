@@ -406,7 +406,8 @@ workflow PROCESS_SAMPLE {
         }
 
     emit:
-        mark_duplicate_bams
+	strict_bams
+        //mark_duplicate_bams
 }
 
 // Function to resolve files
