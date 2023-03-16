@@ -263,7 +263,7 @@ process star_strict {
   script:
     """
      STAR --runMode alignReads --runThreadN 8 --genomeDir ${reference_genome} --outFilterMultimapNmax 1 \
-     --readFilesIn ${reads} --outFileNamePrefix ${sample_id}.Strict.mapped_to_mm10
+     --readFilesIn ${reads} --readFilesCommand gunzip --outFileNamePrefix ${sample_id}.Strict.mapped_to_mm10
 
      /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Strict.mapped_to_mm10.bam
     """
@@ -292,7 +292,7 @@ process star_loose {
   script:
     """
      STAR --runMode alignReads --runThreadN 8 --genomeDir ${reference_genome} --outFilterMultimapNmax 1 \
-     --readFilesIn ${reads} --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10
+     --readFilesIn ${reads} --readFilesCommand gunzip --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10
 
      /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10.bam
     """
