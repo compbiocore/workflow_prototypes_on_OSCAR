@@ -258,7 +258,8 @@ process star_strict {
     path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.Strict.mapped_to_mm10Aligned.out.sam"), path("${sample_id}")
+    tuple val(sample_id), file("*.Strict.mapped_to_mm10Aligned.out.sam"),
+    tuple path("${sample_id}"), emit: tag_directory
 
   script:
     """
@@ -283,11 +284,11 @@ process star_loose {
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
   input:
-    tuple val(sample_id), path(reads)
-    path(reference_genome)
+    tuple val(sample_id), path(reads), path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.Loose.mapped_to_mm10Aligned.out.sam"), path("${sample_id}")
+    tuple val(sample_id), file("*.Loose.mapped_to_mm10Aligned.out.sam")
+    tuple path("${sample_id}"), emit: tag_directory
 
   script:
     """
@@ -412,9 +413,13 @@ workflow PROCESS_SAMPLE {
 
         //mark_duplicate_bams = null
 
+        strict_tag_directories = null
+
         if (!params.qc_only) {
             strict_bams = star_strict(trimmed_reads, reference_genome)
             loose_bams = star_loose(trimmed_reads, reference_genome)
+
+            strict_tag_directories = strict_bams.tag_directory.collect()
 
             //qualimap(marked_duplicates_bams.marked)
 
@@ -426,8 +431,10 @@ workflow PROCESS_SAMPLE {
             //mark_duplicate_bams = marked_duplicates_bams.bams.collect()
         }
 
+
+
     emit:
-	    strict_bams
+	    strict_tag_directories
         //mark_duplicate_bams
 }
 
