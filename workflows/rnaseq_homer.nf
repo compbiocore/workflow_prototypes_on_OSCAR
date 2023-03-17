@@ -258,7 +258,7 @@ process star_strict {
     path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.Strict.mapped_to_mm10Aligned.out.sam"), path("${sample_id}/*")
+    tuple val(sample_id), file("*.Strict.mapped_to_mm10Aligned.out.sam"), path("${sample_id}")
 
   script:
     """
@@ -287,7 +287,7 @@ process star_loose {
     path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.Loose.mapped_to_mm10Aligned.out.sam"), path("${sample_id}/*")
+    tuple val(sample_id), file("*.Loose.mapped_to_mm10Aligned.out.sam"), path("${sample_id}")
 
   script:
     """
@@ -372,6 +372,27 @@ process feature_count {
    """
 }
 
+process analyze_erv_repeats {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  memory '8.GB'
+
+  time '5.h'
+
+  input:
+   path(tag_directory_path)
+
+  output:
+   file("countTable.Miner_Locus.txt")
+
+  script:
+   """
+    analyzeRepeats.pl ${erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
+   """
+}
+
 workflow PROCESS_SAMPLE {
     take:
         input_ch
@@ -406,7 +427,7 @@ workflow PROCESS_SAMPLE {
         }
 
     emit:
-	strict_bams
+	    strict_bams
         //mark_duplicate_bams
 }
 
@@ -430,8 +451,6 @@ workflow {
 
      PROCESS_SAMPLE (samples_ch, reference_genome)
 
-     if (params.htseq_multisample && !params.qc_only) {
-        htseq_count_multisample(PROCESS_SAMPLE.out.collect())
-     }
+     analyze_erv_repeats(PROCESS_SAMPLE.out.collect())
 
 }
