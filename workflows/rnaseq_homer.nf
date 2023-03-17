@@ -258,14 +258,14 @@ process star_strict {
     path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.Strict.mapped_to_mm10.bam"), path("${sample_id}/*")
+    tuple val(sample_id), file("*.Strict.mapped_to_mm10Aligned.out.sam"), path("${sample_id}/*")
 
   script:
     """
      STAR --runMode alignReads --runThreadN 8 --genomeDir ${reference_genome} --outFilterMultimapNmax 1 \
-     --readFilesIn ${reads} --readFilesCommand gunzip --outFileNamePrefix ${sample_id}.Strict.mapped_to_mm10
+     --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Strict.mapped_to_mm10
 
-     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Strict.mapped_to_mm10.bam
+     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Strict.mapped_to_mm10Aligned.out.sam
     """
 }
 
@@ -287,14 +287,14 @@ process star_loose {
     path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.sortedByCoord.out.bam")
+    tuple val(sample_id), file("*.Loose.mapped_to_mm10Aligned.out.sam"), path("${sample_id}/*")
 
   script:
     """
      STAR --runMode alignReads --runThreadN 8 --genomeDir ${reference_genome} --outFilterMultimapNmax 1 \
-     --readFilesIn ${reads} --readFilesCommand gunzip --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10
+     --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10
 
-     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10.bam
+     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10Aligned.out.sam
     """
 }
 
