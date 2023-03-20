@@ -441,6 +441,6 @@ workflow {
 
      PROCESS_SAMPLE (samples_ch, reference_genome)
 
-     analyze_erv_repeats(PROCESS_SAMPLE.strict_tags.collect(), params.erv_gtf)
+     analyze_erv_repeats(PROCESS_SAMPLE.out.strict_tags.collect(), params.erv_gtf)
 
 }
