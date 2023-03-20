@@ -258,7 +258,6 @@ process star_strict {
     path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.Strict.mapped_to_mm10Aligned.out.sam"),
     tuple path("${sample_id}"), emit: tag_directory
 
   script:
@@ -284,10 +283,10 @@ process star_loose {
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
   input:
-    tuple val(sample_id), path(reads), path(reference_genome)
+    tuple val(sample_id), path(reads)
+    path(reference_genome)
 
   output:
-    tuple val(sample_id), file("*.Loose.mapped_to_mm10Aligned.out.sam")
     tuple path("${sample_id}"), emit: tag_directory
 
   script:
@@ -390,7 +389,7 @@ process analyze_erv_repeats {
 
   script:
    """
-    analyzeRepeats.pl ${erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
+    analyzeRepeats.pl erv_gtf mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
    """
 }
 
