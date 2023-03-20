@@ -389,7 +389,7 @@ process analyze_erv_repeats {
 
   script:
    """
-    perl /homer/bin/analyzeRepeats.pl ${params.erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
+    perl /homer/bin/analyzeRepeats.pl ${file(params.erv_gtf)} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
    """
 }
 
