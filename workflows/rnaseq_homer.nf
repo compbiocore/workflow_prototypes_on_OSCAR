@@ -251,7 +251,7 @@ process star_strict {
 
   memory '75.GB'
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind $params.homer_config:/homer/config.txt'
 
   input:
     tuple val(sample_id), path(reads), val(group)
@@ -281,7 +281,7 @@ process star_loose {
 
   memory '75.GB'
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind $params.homer_config:/homer/config.txt'
 
   input:
     tuple val(sample_id), path(reads), val(group)
