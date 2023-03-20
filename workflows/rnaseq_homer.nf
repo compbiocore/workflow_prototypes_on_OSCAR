@@ -379,21 +379,26 @@ process analyze_erv_repeats {
 
   containerOptions "--bind $params.homer_data:/homer/data/ --bind $params.homer_config:/homer/config.txt"
 
+  publishDir "$params.out_dir/erv/", mode: 'copy', overwrite: false
+
   memory '8.GB'
 
   time '5.h'
 
   input:
    path(tag_directory_path)
+   val(groups)
    path(erv_gtf)
 
   output:
    file("countTable.Miner_Locus.txt")
+   file("getDiff.Miner_Locus.txt")
 
   script:
    """
     export PATH=/homer/bin/:$PATH
     perl /homer/bin/analyzeRepeats.pl ${erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
+    perl /homer/bin/getDiffExpression.pl countTable.Miner_Locus.txt ${groups} > getDiff.Miner_Locus.txt
    """
 }
 
@@ -441,6 +446,6 @@ workflow {
 
      PROCESS_SAMPLE (samples_ch, reference_genome)
 
-     analyze_erv_repeats(PROCESS_SAMPLE.out.strict_tags.collect(), params.erv_gtf)
+     analyze_erv_repeats(PROCESS_SAMPLE.out.strict_tags.collect(), PROCESS_SAMPLE.out.groups.collect(), params.erv_gtf)
 
 }
