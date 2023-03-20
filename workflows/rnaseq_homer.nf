@@ -382,13 +382,15 @@ process analyze_erv_repeats {
   time '5.h'
 
   input:
-   path(tag_directory_path), path(erv_gtf)
+   path(tag_directory_path)
+   path(erv_gtf)
 
   output:
-   file("countTable.Miner_Loc us.txt")
+   file("countTable.Miner_Locus.txt")
 
   script:
    """
+    export PATH=/homer/bin/:$PATH
     perl /homer/bin/analyzeRepeats.pl ${erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
    """
 }
@@ -456,6 +458,7 @@ workflow {
             .map { get_sample_info(it) }.set { samples_ch }
 
      PROCESS_SAMPLE (samples_ch, reference_genome)
+
 
      analyze_erv_repeats(PROCESS_SAMPLE.out.collect(), params.erv_gtf)
 
