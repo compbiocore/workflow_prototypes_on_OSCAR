@@ -375,7 +375,7 @@ process feature_count {
 process analyze_erv_repeats {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  containerOptions '--bind ${params.homer_data}:/homer/data/'
+  containerOptions "--bind $params.homer_data:/homer/data/"
 
   memory '8.GB'
 
