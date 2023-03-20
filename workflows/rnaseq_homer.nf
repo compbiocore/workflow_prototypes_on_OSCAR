@@ -375,7 +375,7 @@ process feature_count {
 process analyze_erv_repeats {
   container 'cowmoo/rnaseq_pipeline:latest'
 
-  containerOptions "--bind $params.homer_data:/homer/data/"
+  containerOptions "--bind $params.homer_data:/homer/data/ --bind $params.homer_config:/homer/config.txt"
 
   memory '8.GB'
 
@@ -389,7 +389,6 @@ process analyze_erv_repeats {
 
   script:
    """
-    ln -s ${params.homer_config} /homer/config.txt
     perl /homer/bin/analyzeRepeats.pl ${params.erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
    """
 }
