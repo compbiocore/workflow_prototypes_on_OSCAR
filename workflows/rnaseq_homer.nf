@@ -222,10 +222,10 @@ process trimmomatic {
   memory '25.GB'
 
   input:
-    tuple val(sample_id), file(read1), file(read2)
+    tuple val(sample_id), file(read1), file(read2), val(group)
 
   output:
-    tuple val(sample_id), path("fastq/*P.fq.gz")
+    tuple val(sample_id), path("fastq/*P.fq.gz"), val(group)
 
   script:
     if (read2.size() > 0)
@@ -254,11 +254,12 @@ process star_strict {
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
   input:
-    tuple val(sample_id), path(reads)
+    tuple val(sample_id), path(reads), val(group)
     path(reference_genome)
 
   output:
     tuple path("${sample_id}"), emit: tag_directory
+    tuple val(group), emit: groups
 
   script:
     """
@@ -283,11 +284,12 @@ process star_loose {
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
   input:
-    tuple val(sample_id), path(reads)
+    tuple val(sample_id), path(reads), val(group)
     path(reference_genome)
 
   output:
     tuple path("${sample_id}"), emit: tag_directory
+    tuple val(group), emit: groups
 
   script:
     """
@@ -401,42 +403,22 @@ workflow PROCESS_SAMPLE {
         reference_genome
 
     main:
-        //fastqc(input_ch)
-
-        //if (params.kraken) {
-        //    kraken(input_ch)
-        //}
-
         trimmed_reads = trimmomatic(input_ch)
-        //fastqcs = fastqc2(trimmed_reads).collect()
-        //fastqc_screens = fastq_screen(trimmed_reads).collect()
-        //multiqc(fastqcs, fastqc_screens)
-
-        //mark_duplicate_bams = null
 
         strict_tag_directories = null
+        group_labels = null
 
         if (!params.qc_only) {
             strict_bams = star_strict(trimmed_reads, reference_genome)
             loose_bams = star_loose(trimmed_reads, reference_genome)
 
             strict_tag_directories = strict_bams.tag_directory.collect()
-
-            //qualimap(marked_duplicates_bams.marked)
-
-            //if (!params.htseq_multisample) {
-            //    htseq_count(marked_duplicates_bams.marked)
-            //}
-
-            //feature_count(marked_duplicates_bams.marked)
-            //mark_duplicate_bams = marked_duplicates_bams.bams.collect()
+            group_labels = strict_bams.groups.collect()
         }
 
-
-
     emit:
-	    strict_tag_directories
-        //mark_duplicate_bams
+	    strict_tags = strict_tag_directories
+	    groups = group_labels
 }
 
 // Function to resolve files
@@ -459,7 +441,6 @@ workflow {
 
      PROCESS_SAMPLE (samples_ch, reference_genome)
 
-
-     analyze_erv_repeats(PROCESS_SAMPLE.out.collect(), params.erv_gtf)
+     analyze_erv_repeats(PROCESS_SAMPLE.strict_tags.collect(), params.erv_gtf)
 
 }
