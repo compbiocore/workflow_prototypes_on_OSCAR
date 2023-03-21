@@ -20,7 +20,7 @@ process fastq_screen {
 
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
 
-  time '6.h'
+  time '12.h'
 
   cpus 6 
 
