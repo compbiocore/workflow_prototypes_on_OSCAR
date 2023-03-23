@@ -399,7 +399,7 @@ process analyze_erv_repeats {
     echo Hello
     export PATH=/homer/bin/:$PATH
     perl /homer/bin/analyzeRepeats.pl ${erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
-    perl /homer/bin/getDiffExpression.pl countTable.Miner_Locus.txt ${groups} > getDiff.Miner_Locus.txt
+    perl /homer/bin/getDiffExpression.pl countTable.Miner_Locus.txt ${groups.join()} > getDiff.Miner_Locus.txt
    """
 }
 
