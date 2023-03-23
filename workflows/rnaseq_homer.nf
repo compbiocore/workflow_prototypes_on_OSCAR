@@ -281,7 +281,7 @@ process star_loose {
 
   memory '75.GB'
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind $params.homer_config:/homer/config.txt'
+  containerOptions "--bind /gpfs/data/cbc:/gpfs/data/cbc --bind $params.homer_config:/homer/config.txt"
 
   input:
     tuple val(sample_id), path(reads), val(group)
@@ -396,6 +396,7 @@ process analyze_erv_repeats {
 
   script:
    """
+    echo Hello
     export PATH=/homer/bin/:$PATH
     perl /homer/bin/analyzeRepeats.pl ${erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
     perl /homer/bin/getDiffExpression.pl countTable.Miner_Locus.txt ${groups} > getDiff.Miner_Locus.txt
