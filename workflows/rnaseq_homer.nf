@@ -396,10 +396,9 @@ process analyze_erv_repeats {
 
   script:
    """
-    echo Hello
     export PATH=/homer/bin/:$PATH
     perl /homer/bin/analyzeRepeats.pl ${erv_gtf} mm10 -count genes -noadj -d ${tag_directory_path} > countTable.Miner_Locus.txt
-    perl /homer/bin/getDiffExpression.pl countTable.Miner_Locus.txt ${groups.join()} > getDiff.Miner_Locus.txt
+    perl /homer/bin/getDiffExpression.pl countTable.Miner_Locus.txt ${groups.join(' ')} > getDiff.Miner_Locus.txt
    """
 }
 
@@ -432,7 +431,7 @@ def get_sample_info(LinkedHashMap sample) {
     read1  = sample.read1 ? file(sample.read1, checkIfExists: true) : null
     read2 = sample.read2 ? file(sample.read2, checkIfExists: true) : null
 
-    return [ sample.sample_id, read1, read2 ]
+    return [ sample.sample_id, read1, read2, sample.group ]
 }
 
 workflow {
