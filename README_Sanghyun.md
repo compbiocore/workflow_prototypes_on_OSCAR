@@ -30,7 +30,27 @@ nextflow run /gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/workflows/rnaseq.
 
 ### 4. Run the HOMER Pipeline
 
-```commandline (example)
+#### 4a. HOMER Samplesheet
+
+```commandline
+cd $WORK_DIR
+nextflow_start
+module load java/jdk-11
+
+nextflow run $NEXTFLOW_GITHUB_DIRECTORY/rnaseq_homer.nf \
+--samplesheet $SAMPLESHEET \
+--out_dir $OUTPUT_DIRECTORY --reference_genome $STAR_INDEX_DIRECTORY \
+--homer_data $HOMER_DATA_DIRECTORY --homer_config $HOMER_CONFIG_FILE \
+--erv_gtf $ERV_GTF
+```
+
+`$HOMER_DATA_DIRECTORY` is the HOMER directory that contains downloaded custom genomes and processed by HOMER installation/update script.
+`$HOMER_CONFIG_FILE` is the HOMER configuration file that contains the list of custom available genomes (e.g., Mmus38). 
+`ERV_GTF` is the GTF containing the coordinates of the ERVs.
+`$SAMPLESHEET` is the csv that contains the sample label, paths to the paired end reads and the group (e.g., treatment vs. knockout).
+
+##### 4a. Example Usage
+```commandline
 cd /gpfs/data/cbc/sanghyun_lee/
 nextflow_start
 module load java/jdk-11
@@ -42,19 +62,7 @@ nextflow run /gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/workflows/rnaseq_
 --erv_gtf /gpfs/data/cbc/sanghyun_lee/Mmus38.geve.m_v2_SRK.gtf
 ```
 
-```commandline
-cd $WORK_DIR
-nextflow_start
-module load java/jdk-11
-
-nextflow run /gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/workflows/rnaseq_homer.nf \
---samplesheet $SAMPLESHEET \
---out_dir $OUTPUT_DIRECTORY --reference_genome $STAR_INDEX_DIRECTORY \
---homer_data $HOMER_DATA_DIRECTORY --homer_config $HOMER_CONFIG_FILE \
---erv_gtf $ERV_GTF
-```
-
-#### 4a. HOMER Samplesheet
+#### 4b. HOMER Samplesheet (Example)
 
 ```commandline
 sample_id,read1,read2,group
