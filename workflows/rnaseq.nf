@@ -219,7 +219,9 @@ process trimmomatic {
 
   cpus 8
 
-  memory '25.GB' 
+  memory '25.GB'
+
+  tag "${sample_id}.trimmomatic"
 
   input:
     tuple val(sample_id), file(read1), file(read2)
