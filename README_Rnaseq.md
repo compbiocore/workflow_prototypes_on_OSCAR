@@ -92,7 +92,7 @@ rnaseq_test_out/qc/young_1/young_1/raw_data_qualimapReport:
 coverage_profile_along_genes_(high).txt  coverage_profile_along_genes_(low).txt  coverage_profile_along_genes_(total).txt
 ```
 
-### 4. Logging and Debugging
+### 5. Logging and Debugging
 
 The logs for samples will organized under `output_dir/logs/${TASK_NAME/`;
 Each task will have its corresponding:
@@ -122,18 +122,20 @@ young_2_trimmomatic.command.run.text
 young_2__trimmomatic.command.sh.txt
 young_2_trimmomatic => /gpfs/data/nextflow_working_dir/75/2ae13ba7cdaf42r6101c3e07f4d289 #nextflow working directory symlink
 ...
+
+status.txt
 ```
 
 Finally each workflow's output directory will have a `status.txt` that will be written whenever a workflow finishes to indicate if the workflow finished successfully or it has failed and what the error is. 
 
-#### 4a. Workflow Success Message for `status.txt`
+#### 5a. Workflow Success Message for `status.txt`
 
 ```bash
 Pipeline completed at: 2023-04-30T18:47:51.829232-04:00
 Execution status: OK
 ```
 
-#### 4b. Example Workflow Error Message for `status.txt`
+#### 5b. Example Workflow Error Message for `status.txt`
 
 The log should pinpoint to the failed job that caused the entire workflow to fail, its stdout, stderr and exit code; and the path to its Nextflow working directory, e.g.:
 ```bash
