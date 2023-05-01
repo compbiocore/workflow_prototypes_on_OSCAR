@@ -92,10 +92,95 @@ rnaseq_test_out/qc/young_1/young_1/raw_data_qualimapReport:
 coverage_profile_along_genes_(high).txt  coverage_profile_along_genes_(low).txt  coverage_profile_along_genes_(total).txt
 ```
 
+### 4. Logging and Debugging
+
+The logs for samples will organized under `output_dir/logs/${TASK_NAME/`;
+Each task will have its corresponding:
+ - executed shell command `.command.sh.txt`
+ - stdout `.command.err.log.txt`
+ - stderr `.command.err.err.txt`
+
+In addition the Slurm execution will also have its corresponding 
+ - executed job submission command `.command.run.txt`
+ - job sumbission stdout/stderr `.command.begin.txt`
+
+Each task will also have its own symlink reference to the original Nextflow working directory.
+
+e.g., 
+
+```bash
+young_1_trimmomatic.command.run.txt
+young_1_trimmomatic.command.sh.txt
+young_1_trimmomatic.command.begin.txt
+young_1_trimmomatic.command.err.txt
+young_1_trimmomatic.command.log.txt
+young_1_trimmomatic.command.out.txt
+young_1_trimmomatic.command.trace.txt
+young_1_trimmomatic -> /gpfs/data/nextflow_working_dir/71/2ae13fa7baaf4276107c2b07f3a255 #nextflow working directory symlink
+
+young_2_trimmomatic.command.run.text
+young_2__trimmomatic.command.sh.txt
+young_2_trimmomatic => /gpfs/data/nextflow_working_dir/75/2ae13ba7cdaf42r6101c3e07f4d289 #nextflow working directory symlink
+...
+```
+
+Finally each workflow's output directory will have a `status.txt` that will be written whenever a workflow finishes to indicate if the workflow finished successfully or it has failed and what the error is. 
+
+#### 4a. Workflow Success Message for `status.txt`
+
+```bash
+Pipeline completed at: 2023-04-30T18:47:51.829232-04:00
+Execution status: OK
+```
+
+#### 4b. Example Workflow Error Message for `status.txt`
+
+The log should pinpoint to the failed job that caused the entire workflow to fail, its stdout, stderr and exit code; and the path to its Nextflow working directory, e.g.:
+```bash
+ipeline completed at: 2023-04-30T22:42:32.144450-04:00
+Error executing process > 'sayHello'
+
+Caused by:
+  Process `sayHello` terminated with an error exit status (1)
+
+Command executed:
+
+  echo 'Hello world!'
+  exit 1
+
+Command exit status:
+  1
+
+Command output:
+  Hello world!
+
+Command wrapper:
+  ## SLURM PROLOG ###############################################################
+  ##    Job ID : 9846742
+  ##  Job Name : nf-sayHello
+  ##  Nodelist : node1323
+  ##      CPUs : 4
+  ##  Mem/Node : 4096 MB
+  ## Directory : /gpfs/nextflow_publishdir/work/1f/50b11428d9238b52adccd961788510
+  ##   Job Started : Sun Apr 30 22:42:29 EDT 2023
+  ###############################################################################
+  Hello world!
+
+Work dir:
+  /gpfs/nextflow_publishdir/work/1f/50b11428d9238b52adccd961788510
+
+Tip: you can try to figure out what's wrong by changing to the process work dir and showing the script file named `.command.sh`
+```
+
 ### Appendix:
 
 ### A. Build the Docker
 ```bash
 cd metadata
 docker build -f RNASeq_Dockerfile -t rnaseq_pipeline --no-cache --platform linux/amd64 .
+```
+
+### B. Test Quickly Workflow
+```bash
+nextflow run workflows/rnaseq.nf --samplesheet metadata/samplesheet_rnaseq_short.csv --out_dir rnaseq_test_out --reference_genome /gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0_star_idx --gtf /gpfs/data/cbc/koren_lab/elif_sengun_rnaseq_ffs/references/Oryctolagus_cuniculus.OryCun2.0.108.gtf
 ```

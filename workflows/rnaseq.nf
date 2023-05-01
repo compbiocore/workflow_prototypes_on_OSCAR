@@ -403,5 +403,18 @@ workflow {
      if (params.htseq_multisample && !params.qc_only) {
         htseq_count_multisample(PROCESS_SAMPLE.out.collect())
      }
+}
 
+workflow.onComplete {
+  out_dir = workflow.launchDir.resolve(params.out_dir).toString()
+
+  log.info("Pipeline completed at: $workflow.complete")
+  log.info("Execution status: ${ workflow.success ? 'OK' : 'failed' }")
+
+  File file = new File(out_dir + "/status.txt")
+  if (workflow.errorReport) {
+   file.write "Pipeline completed at: $workflow.complete\n${workflow.errorReport}"
+  } else {
+   file.write("Pipeline completed at: $workflow.complete\nExecution status: ${ workflow.success ? 'OK' : 'failed' }\n")
+  }
 }
