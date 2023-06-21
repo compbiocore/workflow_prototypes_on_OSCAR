@@ -22,9 +22,9 @@ process fastq_screen {
 
   time '12.h'
 
-  cpus 6 
+  cpus 8
 
-  memory '25.GB'
+  memory '100.GB'
 
   publishDir "$params.out_dir/qc/", mode: 'copy', overwrite: false
 
