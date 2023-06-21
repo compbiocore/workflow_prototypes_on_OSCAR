@@ -126,7 +126,7 @@ process qualimap {
    tuple val(sample_id), file(bam), file(bam_index)
 
   output:
-   path "{$sample_id}"
+   path "${sample_id}"
 
   script:
    """
