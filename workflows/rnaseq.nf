@@ -391,16 +391,16 @@ workflow PROCESS_SAMPLE {
 
         if (!params.qc_only) {
             marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
-            qualimap(marked_duplicates_bams.marked)
+            qualimaps = qualimap(marked_duplicates_bams.marked).collect()
 
             if (!params.htseq_multisample) {
-                htseq_count(marked_duplicates_bams.marked)
+                htseq_counts = htseq_count(marked_duplicates_bams.marked)
             }
 
             feature_count(marked_duplicates_bams.marked)
             mark_duplicate_bams = marked_duplicates_bams.bams.collect()
 
-            multiqc_full(fastqcs, fastqc_screens, qualimap, htseq_count)
+            multiqc_full(fastqcs, fastqc_screens, qualimaps, htseq_count)
         }
 
     emit:
