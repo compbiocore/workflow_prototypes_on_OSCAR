@@ -400,7 +400,7 @@ workflow PROCESS_SAMPLE {
             feature_count(marked_duplicates_bams.marked)
             mark_duplicate_bams = marked_duplicates_bams.bams.collect()
 
-            multiqc_full(fastqcs, fastqc_screens, qualimaps, htseq_count)
+            multiqc_full(fastqcs, fastqc_screens, qualimaps, htseq_counts)
         }
 
     emit:
