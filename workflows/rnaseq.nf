@@ -79,7 +79,7 @@ process multiqc_full {
 
   script:
    """
-    multiqc *_fastqc.zip *_screen.txt *.bam *.bai *_htseq_counts
+    multiqc *_fastqc.zip *_screen.txt */rnaseq_qc_results.txt *_htseq_counts
    """
 }
 
@@ -163,7 +163,7 @@ process fastqc {
     tuple val(sample_id), file(read1), file(read2)
 
   output:
-    path "*"
+    path "*_fastqc.*"
 
   script:
    if (read2.size() > 0)
@@ -186,7 +186,7 @@ process fastqc2 {
     tuple val(sample_id), path(reads)
 
   output:
-    path "*"
+    path "*_fastqc.*"
 
   script:
     if (reads.size() > 1)
