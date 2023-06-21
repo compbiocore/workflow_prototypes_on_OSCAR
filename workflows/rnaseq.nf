@@ -126,7 +126,7 @@ process qualimap {
    tuple val(sample_id), file(bam), file(bam_index)
 
   output:
-   path "*"
+   path "{$sample_id}"
 
   script:
    """
@@ -335,7 +335,7 @@ process htseq_count {
    tuple val(sample_id), file(bam), file(bam_index)
 
   output:
-   path "*"
+   path "*_htseq_counts"
 
   script:
    """
