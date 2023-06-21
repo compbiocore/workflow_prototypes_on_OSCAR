@@ -37,7 +37,7 @@ process fastq_screen {
     path "${sample_id}_fastq_screen/*"
 
   """
-  /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${reads} --subset 0
+  /FastQ-Screen-0.15.2/fastq_screen --aligner bwa --conf ${file(params.fastqscreen_conf)} --outdir ${sample_id}_fastq_screen ${reads}
   """
 }
 
@@ -58,6 +58,28 @@ process multiqc {
   script:
    """
     multiqc *_fastqc.zip *_screen.txt
+   """
+}
+
+process multiqc_full {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  publishDir "$params.out_dir/qc", mode: 'copy', overwrite: false
+
+  input:
+   path(fastqcs)
+   path(fastq_screens)
+   path(qualimap)
+   path(htseq_count)
+
+  output:
+   path("*")
+
+  script:
+   """
+    multiqc *_fastqc.zip *_screen.txt *.bam *.bai *_htseq_counts
    """
 }
 
@@ -108,7 +130,7 @@ process qualimap {
 
   script:
    """
-    qualimap rnaseq -gtf ${params.gtf} -bam ${bam} -outdir ${sample_id}
+    qualimap rnaseq -gtf ${params.gtf} -bam ${bam} -outdir ${sample_id} --java-mem-size=25G
    """
 }
 
@@ -360,7 +382,10 @@ workflow PROCESS_SAMPLE {
         trimmed_reads = trimmomatic(input_ch)
         fastqcs = fastqc2(trimmed_reads).collect()
         fastqc_screens = fastq_screen(trimmed_reads).collect()
-        multiqc(fastqcs, fastqc_screens)
+
+        if (params.qc_only) {
+            multiqc(fastqcs, fastqc_screens)
+        }
 
         mark_duplicate_bams = null
 
@@ -374,6 +399,8 @@ workflow PROCESS_SAMPLE {
 
             feature_count(marked_duplicates_bams.marked)
             mark_duplicate_bams = marked_duplicates_bams.bams.collect()
+
+            multiqc_full(fastqcs, fastqc_screens, qualimap, htseq_count)
         }
 
     emit:
