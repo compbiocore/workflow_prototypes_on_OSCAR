@@ -275,7 +275,7 @@ process star {
 
   memory '75.GB'
 
-  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs/:/gpfs/data/shared/databases/refchef_refs/'
 
   input:
     tuple val(sample_id), path(reads)
