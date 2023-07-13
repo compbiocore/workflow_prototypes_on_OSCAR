@@ -381,7 +381,7 @@ process analyze_erv_repeats {
 
   publishDir "$params.out_dir/erv/", mode: 'copy', overwrite: false
 
-  memory '8.GB'
+  memory '30.GB'
 
   time '5.h'
 
