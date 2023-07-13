@@ -9,6 +9,7 @@ params.reference_genome_fasta = ""
 params.fastqscreen_conf = "/gpfs/data/cbc/pcao5/workflow_prototypes_on_OSCAR/metadata/fastqscreen_mouse_rnaseq.conf"
 params.qc_only = false
 params.kraken = false
+params.use_loose = false
 
 if (!params.samplesheet || !params.out_dir) {
   error "Error: Missing the samplesheet (--samplesheet) or output directory (--out_dir)."
@@ -293,7 +294,8 @@ process star_loose {
 
   script:
     """
-     STAR --runMode alignReads --runThreadN 8 --genomeDir ${reference_genome} --outFilterMultimapNmax 1 \
+     STAR --runMode alignReads --runThreadN 8 --genomeDir ${reference_genome} --outFilterMultimapNmax 1000 \
+     --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterScoreMin 50 \
      --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10
 
      /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10Aligned.out.sam
@@ -418,12 +420,18 @@ workflow PROCESS_SAMPLE {
             loose_bams = star_loose(trimmed_reads, reference_genome)
 
             strict_tag_directories = strict_bams.tag_directory.collect()
-            group_labels = strict_bams.groups.collect()
+            strict_group_labels = strict_bams.groups.collect()
+
+            loose_tag_directories = loose_bams.tag_directory.collect()
+            loose_group_labels = loose_bams.groups.collect()
         }
 
     emit:
 	    strict_tags = strict_tag_directories
-	    groups = group_labels
+	    strict_groups = strict_group_labels
+
+	    loose_tags = loose_tag_directories
+	    loose_groups = loose_group_labels
 }
 
 // Function to resolve files
@@ -446,6 +454,8 @@ workflow {
 
      PROCESS_SAMPLE (samples_ch, reference_genome)
 
-     analyze_erv_repeats(PROCESS_SAMPLE.out.strict_tags.collect(), PROCESS_SAMPLE.out.groups.collect(), params.erv_gtf)
+     tags  = params.use_loose ? PROCESS_SAMPLE.out.loose_tags.collect() : PROCESS_SAMPLE.out.strict_tags.collect()
+     groups = params.use_loose ? PROCESS_SAMPLE.out.loose_groups.collect() : PROCESS_SAMPLE.out.loose_tags.collect()
 
+     analyze_erv_repeats(tags, groups, params.erv_gtf)
 }
