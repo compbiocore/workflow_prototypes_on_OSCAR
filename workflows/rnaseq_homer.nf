@@ -267,7 +267,7 @@ process star_strict {
      STAR --runMode alignReads --runThreadN 8 --genomeDir ${reference_genome} --outFilterMultimapNmax 1 \
      --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Strict.mapped_to_mm10
 
-     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Strict.mapped_to_mm10Aligned.out.sam
+     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Strict.mapped_to_mm10Aligned.out.sam -sspe
     """
 }
 
@@ -298,7 +298,7 @@ process star_loose {
      --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterScoreMin 50 \
      --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10
 
-     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10Aligned.out.sam
+     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10Aligned.out.sam -sspe
     """
 }
 
