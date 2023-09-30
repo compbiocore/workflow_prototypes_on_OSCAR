@@ -293,6 +293,36 @@ process star {
     """
 }
 
+process star_erv {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir", pattern: "*.bam", mode: 'copy', overwrite: false
+
+  time '6.h'
+
+  cpus 16
+
+  memory '75.GB'
+
+  containerOptions "--bind /gpfs/data/cbc:/gpfs/data/cbc --bind $params.homer_config:/homer/config.txt"
+
+  input:
+    tuple val(sample_id), path(reads)
+    path(reference_genome)
+
+  output:
+    tuple val(sample_id), file("*.sortedByCoord.out.bam")
+
+  script:
+    """
+     STAR --runMode alignReads --runThreadN 16 --genomeDir ${reference_genome} --outFilterMultimapNmax 1000 \
+     --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterScoreMin 50 \
+     --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10 --limitOutSAMoneReadBytes 200000
+
+     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10Aligned.out.sam -sspe
+    """
+}
+
 process htseq_count_multisample {
 
   container 'cowmoo/rnaseq_pipeline:latest'
@@ -367,6 +397,29 @@ process feature_count {
    """
 }
 
+process feature_count_erv {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  publishDir "$params.out_dir/expressions/", mode: 'copy', overwrite: false
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
+
+  memory '8.GB'
+
+  time '5.h'
+
+  input:
+   tuple val(sample_id), file(bam), file(bam_index)
+
+  output:
+   path "*"
+
+  script:
+   """
+    featureCounts -p -M --primary -s 1 -a ${params.gtf} -o ${sample_id}.featureCounts.txt ${bam}
+   """
+}
+
 workflow PROCESS_SAMPLE {
     take:
         input_ch
@@ -390,14 +443,25 @@ workflow PROCESS_SAMPLE {
         mark_duplicate_bams = null
 
         if (!params.qc_only) {
-            marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
+
+            if (!params.erv) {
+                marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
+            } else {
+                marked_duplicates_bams = mark_duplicate(star_erv(trimmed_reads, reference_genome))
+            }
+
             qualimaps = qualimap(marked_duplicates_bams.marked).collect()
 
             if (!params.htseq_multisample) {
                 htseq_counts = htseq_count(marked_duplicates_bams.marked)
             }
 
-            feature_count(marked_duplicates_bams.marked)
+            if (!params.erv) {
+                feature_count(marked_duplicates_bams.marked)
+            } else {
+                feature_count_erv(marked_duplicates_bams.marked)
+            }
+
             mark_duplicate_bams = marked_duplicates_bams.bams.collect()
 
             multiqc_full(fastqcs, fastqc_screens, qualimaps, htseq_counts)
