@@ -83,6 +83,28 @@ process multiqc_full {
    """
 }
 
+process multiqc_erv {
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc'
+
+  publishDir "$params.out_dir/qc", mode: 'copy', overwrite: false
+
+  input:
+   path(fastqcs)
+   path(fastq_screens)
+   path(qualimap)
+   path(htseq_count)
+
+  output:
+   path("*")
+
+  script:
+   """
+    multiqc *_fastqc.zip *_screen.txt */genome_results.txt *_htseq_counts
+   """
+}
+
 process build_star_index {
   container 'cowmoo/rnaseq_pipeline:latest'
 
@@ -112,6 +134,8 @@ process build_star_index {
 
 
 process qualimap {
+  errorStrategy 'ignore'
+
   container 'cowmoo/rnaseq_pipeline:latest'
 
   containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
@@ -133,6 +157,34 @@ process qualimap {
     qualimap rnaseq -gtf ${params.gtf} -bam ${bam} -outdir ${sample_id} --java-mem-size=25G
    """
 }
+
+process qualimap_erv {
+  errorStrategy 'ignore'
+
+  container 'cowmoo/rnaseq_pipeline:latest'
+
+  containerOptions '--bind /gpfs/data/cbc:/gpfs/data/cbc --bind /gpfs/data/shared/databases/refchef_refs:/gpfs/data/shared/databases/refchef_refs'
+
+  publishDir "$params.out_dir/qc/${sample_id}", mode: 'copy', overwrite: false
+
+  memory '25.GB'
+
+  time '6.h'
+
+  cpus 5 
+
+  input:
+   tuple val(sample_id), file(bam), file(bam_index)
+
+  output:
+   path "${sample_id}"
+
+  script:
+   """
+    qualimap bamqc -gff ${params.gtf} -bam ${bam} -outdir ${sample_id} --java-mem-size=25G
+   """
+}
+
 
 process mark_duplicate {
   container 'cowmoo/rnaseq_pipeline:latest'
@@ -318,7 +370,7 @@ process star_erv {
      STAR --runMode alignReads --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${reference_genome} \
      --outFilterMultimapNmax 1000 --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 \
      --outFilterScoreMin 50 --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id} \
-     --limitOutSAMoneReadBytes 200000
+     --limitOutSAMoneReadBytes 200000 --outSAMtype BAM SortedByCoordinate
     """
 }
 
@@ -445,25 +497,26 @@ workflow PROCESS_SAMPLE {
 
             if (!params.erv) {
                 marked_duplicates_bams = mark_duplicate(star(trimmed_reads, reference_genome))
+                qualimaps = qualimap(marked_duplicates_bams.marked).collect()
+                feature_count(marked_duplicates_bams.marked)
             } else {
                 marked_duplicates_bams = mark_duplicate(star_erv(trimmed_reads, reference_genome))
+                qualimaps = qualimap_erv(marked_duplicates_bams.marked).collect()
+                feature_count_erv(marked_duplicates_bams.marked)
             }
-
-            qualimaps = qualimap(marked_duplicates_bams.marked).collect()
 
             if (!params.htseq_multisample) {
                 htseq_counts = htseq_count(marked_duplicates_bams.marked)
             }
 
-            if (!params.erv) {
-                feature_count(marked_duplicates_bams.marked)
-            } else {
-                feature_count_erv(marked_duplicates_bams.marked)
-            }
 
             mark_duplicate_bams = marked_duplicates_bams.bams.collect()
-
-            multiqc_full(fastqcs, fastqc_screens, qualimaps, htseq_counts)
+            
+            if (!params.erv) {
+            	multiqc_full(fastqcs, fastqc_screens, qualimaps, htseq_counts)
+            } else {
+		multiqc_erv(fastqcs, fastqc_screens, qualimaps, htseq_counts)
+	    }	
         }
 
     emit:
