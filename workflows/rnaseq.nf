@@ -317,7 +317,7 @@ process star_erv {
     """
      STAR --runMode alignReads --runThreadN 16 --genomeDir ${reference_genome} --outFilterMultimapNmax 1000 \
      --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterScoreMin 50 \
-     --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10 --limitOutSAMoneReadBytes 200000
+     --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id} --limitOutSAMoneReadBytes 200000
     """
 }
 
