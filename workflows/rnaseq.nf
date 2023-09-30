@@ -315,9 +315,10 @@ process star_erv {
 
   script:
     """
-     STAR --runMode alignReads --runThreadN 16 --genomeDir ${reference_genome} --outFilterMultimapNmax 1000 \
-     --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterScoreMin 50 \
-     --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id} --limitOutSAMoneReadBytes 200000
+     STAR --runMode alignReads --runThreadN 16 --outBAMsortingThreadN 12 --genomeDir ${reference_genome} \
+     --outFilterMultimapNmax 1000 --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 \
+     --outFilterScoreMin 50 --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id} \
+     --limitOutSAMoneReadBytes 200000
     """
 }
 
