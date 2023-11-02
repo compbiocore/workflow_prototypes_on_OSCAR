@@ -298,7 +298,7 @@ process star_loose {
      --outFilterMismatchNmax 6 --outFilterScoreMinOverLread 0 --outFilterMatchNminOverLread 0 --outFilterScoreMin 50 \
      --readFilesIn ${reads} --readFilesCommand zcat --outFileNamePrefix ${sample_id}.Loose.mapped_to_mm10 --limitOutSAMoneReadBytes 200000
 
-     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10Aligned.out.sam -sspe
+     /homer/bin/makeTagDirectory ${sample_id} ${sample_id}.Loose.mapped_to_mm10Aligned.out.sam -sspe -keepOne
     """
 }
 
