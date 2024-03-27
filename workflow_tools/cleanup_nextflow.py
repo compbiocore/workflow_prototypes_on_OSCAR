@@ -9,66 +9,79 @@ import shutil
 import datetime
 from collections import defaultdict
 import sys
+import argparse
 
-n = 30
-current_files = defaultdict()
+def parse_args():
+    parser = argparse.ArgumentParser()
+    #parser.add_argument("-f", "--file", type=str, required=True)
+    parser.add_argument("-n", "--n_days", type=int, default=30)
+    args = parser.parse_args()
+    return args
 
-# Our directory hierachy looks like this /work/a9/eaioaec109231/
-# want to remove /eaioaec109231
-try:
-    os.chdir("./work")
-    #print("Should be in the work directory", os.getcwd())
-except FileNotFoundError:
-    sys.exit("./work directory not found!")
-    
-for file in os.listdir("./"):
-    #print("Current file looked at: ", file)
-    #print("current WD", os.getcwd())
+def main(args):
+    n = args.n_days
+    print(n)
+    current_files = defaultdict()
 
-    if os.path.isdir(file):
-        #print(file)
-        os.chdir(file)
-        #print("Should be in the next directory!", os.getcwd())
-
-        for item in os.listdir("./"):
-            #print(item)
-            if os.path.isdir(item):
-                #print("changed into: ", item)
-                #print(os.getcwd())
-                t = os.path.getmtime(item)
-            #   print(datetime.datetime.fromtimestamp(t))
-            #    print(datetime.datetime.now())
-                last_modified = datetime.datetime.now() - datetime.datetime.fromtimestamp(t)
-
-                current_files[os.getcwd() + "/" + item] = last_modified
-                
-                #print("last mod: ", last_modified.days)
-                #print("current item", item)
-        # print("After adding items to mod folderes", os.getcwd())
-        os.chdir("../")
-    continue
-    
-
-#print(current_files)
-sorted_folders = dict(reversed(sorted(current_files.items(), key=lambda x: x[1])))
-#print(sorted_folders)
-for folder in sorted_folders:
-    if sorted_folders[folder].days >= n:
-        print(folder, "Last modified: " + str(sorted_folders[folder].days) + " days ago")
-    
-    
-confirmation = input("Do you want to remove these files? (yes/no) ").lower()
-while True:
-    if confirmation == "yes":
-        for folder in sorted_folders:
-            if sorted_folders[folder].days >= n:
-                shutil.rmtree(folder)
-
-        print("Files have been removed.")
-        break
-    elif confirmation == "no":
-        print("no")
-        break
-    else:
-        confirmation = input("Input not recognized. Do you want to remove these files? (yes/no) ").lower()
+    # Our directory hierachy looks like this /work/a9/eaioaec109231/
+    # want to remove /eaioaec109231
+    try:
+        os.chdir("./work")
+        #print("Should be in the work directory", os.getcwd())
+    except FileNotFoundError:
+        sys.exit("./work directory not found!")
         
+    for file in os.listdir("./"):
+        #print("Current file looked at: ", file)
+        #print("current WD", os.getcwd())
+
+        if os.path.isdir(file):
+            #print(file)
+            os.chdir(file)
+            #print("Should be in the next directory!", os.getcwd())
+
+            for item in os.listdir("./"):
+                #print(item)
+                if os.path.isdir(item):
+                    #print("changed into: ", item)
+                    #print(os.getcwd())
+                    t = os.path.getmtime(item)
+                #   print(datetime.datetime.fromtimestamp(t))
+                #    print(datetime.datetime.now())
+                    last_modified = datetime.datetime.now() - datetime.datetime.fromtimestamp(t)
+
+                    current_files[os.getcwd() + "/" + item] = last_modified
+                    
+                    #print("last mod: ", last_modified.days)
+                    #print("current item", item)
+            # print("After adding items to mod folderes", os.getcwd())
+            os.chdir("../")
+        continue
+
+    #print(current_files)
+    sorted_folders = dict(reversed(sorted(current_files.items(), key=lambda x: x[1])))
+    #print(sorted_folders)
+    for folder in sorted_folders:
+        if sorted_folders[folder].days >= n:
+            print(folder, "Last modified: " + str(sorted_folders[folder].days) + " days ago")
+        
+        
+    confirmation = input("Do you want to remove these files? (yes/no) ").lower()
+    while True:
+        if confirmation == "yes":
+            for folder in sorted_folders:
+                if sorted_folders[folder].days >= n:
+                    shutil.rmtree(folder)
+
+            print("Files have been removed.")
+            break
+        elif confirmation == "no":
+            print("No files have been removed.")
+            break
+        else:
+            confirmation = input("Input not recognized. Do you want to remove these files? (yes/no) ").lower()
+        
+if __name__ == "__main__":
+    args = parse_args()
+    main(args)
+    pass
