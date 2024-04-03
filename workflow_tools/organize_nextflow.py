@@ -5,6 +5,7 @@ import time
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", type=str, required=True)
+    parser.add_argument("-b", "--bind", type=str, default="/oscar/data/cbc")
     args = parser.parse_args()
     return args
 
@@ -29,17 +30,17 @@ def main(args):
     process_cmds_sim = []
     for process in processes:
         cmds = []
-        cmds.append("\t\tln -sf `realpath .command.sh` ${params.out_dir}/scripts/${sample_id}_" + process + ".sh\n")
-        cmds.append("\t\tln -sf `realpath .command.err` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stderr\n")
-        cmds.append("\t\tln -sf `realpath .command.log` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stdout\n")
+        cmds.append("\t\tln -sf `realpath .command.sh` ${params.out_dir}/scripts/" + process + ".sh\n")
+        cmds.append("\t\tln -sf `realpath .command.err` ${params.out_dir}/logs/" + process + "_slurm.stderr\n")
+        cmds.append("\t\tln -sf `realpath .command.log` ${params.out_dir}/logs/" + process + "_slurm.stdout\n")
         process_cmds_sim.insert(0, cmds)
     
     process_cmds_cp = []
     for process in processes:
         cmds = []
-        cmds.append("\t\tcp -sf `realpath .command.sh` ${params.out_dir}/scripts/${sample_id}_" + process + ".sh\n")
-        cmds.append("\t\tcp -sf `realpath .command.err` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stderr\n")
-        cmds.append("\t\tcp -sf `realpath .command.log` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stdout\n")
+        cmds.append("\t\tcp -sf `realpath .command.sh` ${params.out_dir}/scripts/" + process + ".sh\n")
+        cmds.append("\t\tcp -sf `realpath .command.err` ${params.out_dir}/logs/" + process + "_slurm.stderr\n")
+        cmds.append("\t\tcp -sf `realpath .command.log` ${params.out_dir}/logs/" + process + "_slurm.stdout\n")
         process_cmds_cp.insert(0, cmds)
     
 
@@ -198,64 +199,77 @@ def main_v3(args):
     # we are also traversing backwards- so we insert each set of cmds first
     for process in process_cmds_sim:
         cmds = []
-        cmds.append("\t\tln -sf `realpath .command.sh` ${params.out_dir}/scripts/${sample_id}_" + process + ".sh\n")
-        cmds.append("\t\tln -sf `realpath .command.err` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stderr\n")
-        cmds.append("\t\tln -sf `realpath .command.log` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stdout\n")
+        cmds.append("\t\tln -sf `realpath .command.sh` $PWD/${params.out_dir}/scripts/" + process + ".sh\n")
+        cmds.append("\t\tln -sf `realpath .command.err` $PWD/${params.out_dir}/logs/" + process + "_slurm.stderr\n")
+        cmds.append("\t\tln -sf `realpath .command.log` $PWD/${params.out_dir}/logs/" + process + "_slurm.stdout\n")
         process_cmds_sim[process] = cmds
     
     #print(process_cmds_sim)
     for process in process_cmds_cp:
         cmds = []
-        cmds.append("\t\tcp -sf `realpath .command.sh` ${params.out_dir}/scripts/${sample_id}_" + process + ".sh\n")
-        cmds.append("\t\tcp -sf `realpath .command.err` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stderr\n")
-        cmds.append("\t\tcp -sf `realpath .command.log` ${params.out_dir}/logs/${sample_id}_" + process + "_slurm.stdout\n")
+        cmds.append("\t\tcp -a --remove-destination `realpath .command.sh` $PWD/${params.out_dir}/scripts/" + process + ".sh\n")
+        cmds.append("\t\tcp -a --remove-destination `realpath .command.err` $PWD/${params.out_dir}/logs/" + process + "_slurm.stderr\n")
+        cmds.append("\t\tcp -a --remove-destination `realpath .command.log` $PWD/${params.out_dir}/logs/" + process + "_slurm.stdout\n")
         process_cmds_cp[process] = cmds
     
     with open(file_path, "r+") as f:
         contents = f.readlines()
-        script_idx = defaultdict(list)
-        current_process = processes[-1]
+    
+    script_idx = defaultdict(list)
+    current_process = processes[-1]
+    container_option_count = 0 # checks for containerOption within the process
+    binding_container = f"--bind {args.bind}:{args.bind}"
         #print("current process", current_process)
 
         # traversing backwards through the file, so added lines don't mess up the line numbering (repeated numbers)
-        for file_idx, line in reversed(list(enumerate(contents))):
-            if "process" in line:
-                processes.pop()
-                current_process = processes[-1]
-                #print("current process", current_process)
+    for file_idx, line in reversed(list(enumerate(contents))):
+        if "process" in line:
+            processes.pop()
+            current_process = processes[-1]
+            container_option_count = 0
+            #print("current process", current_process)
+
+        if "containerOptions" in line:
+            container_option_count = 1
+            
+            if binding_container not in line:
+                contents[file_idx] = line[:-2] + " " + binding_container + line[-2:]
+        
+        if "container" in line and container_option_count == 0:
+            contents.insert(file_idx + 1, "\n\tcontainerOptions '" + binding_container + "'\n")
+
+        if "\"\"\"" in line:
+            script_idx[0].append(file_idx)
+            # since we know that the script """ comes in pairs, we can add all to a list and check if it's the first in the pair
+
+            if len(script_idx[0]) % 2 == 0:
+                # iterate through each of the unique processes
+                for idx, cmd in enumerate(process_cmds_sim[current_process]):
+                    # begin inserting after the """
+                    contents.insert(script_idx[0][-1] + idx + 1, cmd)
                 
-            if "\"\"\"" in line:
-                script_idx[0].append(file_idx)
-                # since we know that the script """ comes in pairs, we can add all to a list and check if it's the first in the pair
 
-                if len(script_idx[0]) % 2 == 0:
-                    # iterate through each of the unique processes
-                    for idx, cmd in enumerate(process_cmds_sim[current_process]):
-                        # begin inserting after the """
-                        contents.insert(script_idx[0][-1] + idx + 1, cmd)
-                    
-
-                elif len(script_idx[0]) % 2 == 1:
-                    for idx, cmd in enumerate(process_cmds_cp[current_process]):
-                        # begin inserting before the """
-                        contents.insert(script_idx[0][-1] + idx, cmd)
+            elif len(script_idx[0]) % 2 == 1:
+                for idx, cmd in enumerate(process_cmds_cp[current_process]):
+                    # begin inserting before the """
+                    contents.insert(script_idx[0][-1] + idx, cmd)
+            
+        
+        elif line.lstrip().rstrip() == "$/" or line.lstrip().rstrip() == "/$":
+            print(file_idx)
+            script_idx[1].append(file_idx)
+            
+            if len(script_idx[1]) % 2 == 0:
+                # iterate through each of the unique processes
+                # begin inserting after the $/
+                for idx, cmd in enumerate(process_cmds_sim[current_process]):
+                    contents.insert(script_idx[1][-1] + idx + 1, cmd)
                 
 
-            elif "$/" in line:
-                print(file_idx)
-                script_idx[1].append(file_idx)
-                
-                if len(script_idx[1]) % 2 == 1:
-                    # iterate through each of the unique processes
-                    # begin inserting after the $/
-                    for idx, cmd in enumerate(process_cmds_sim[current_process]):
-                        contents.insert(script_idx[1][-1] + idx + 1, cmd)
-                    
-
-                elif len(script_idx[1]) % 2 == 0:
-                    # begin inserting before the /$
-                    for idx, cmd in enumerate(process_cmds_cp[current_process]):
-                        contents.insert(script_idx[1][-1] + idx, cmd)
+            elif len(script_idx[1]) % 2 == 1:
+                # begin inserting before the /$
+                for idx, cmd in enumerate(process_cmds_cp[current_process]):
+                    contents.insert(script_idx[1][-1] + idx, cmd)
 
 
     with open(file_path, "w") as f:
